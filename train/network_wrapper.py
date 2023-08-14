@@ -1,5 +1,5 @@
 import torch
-from convnext_v2.models.voxel_convnext import VoxelConvNeXtClassifier
+from models.voxel_convnext import VoxelConvNeXtClassifier
 import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
 import numpy as np

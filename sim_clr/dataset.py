@@ -1,8 +1,9 @@
 import numpy as np
 import torchvision
-from pytorch3d.transforms import random_rotation
-from MinkowskiEngine.utils import sparse_quantize
 import torch
+
+from rotations.rotation_conversions import random_rotation
+from MinkowskiEngine.utils import sparse_quantize
 
 # this must be faster to do when batched 
 def rotate(coords, feats):

@@ -4,9 +4,7 @@ import torchmetrics
 import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
 from sim_clr.loss import contrastive_loss
-from convnext_v2.models.voxel_convnext import VoxelConvNeXtCLR
-
-
+from models.voxel_convnext import VoxelConvNeXtCLR
 
 
 class SimCLR(pl.LightningModule):

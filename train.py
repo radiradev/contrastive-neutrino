@@ -32,8 +32,10 @@ def clr_sparse_collate(data, dtype=torch.int32, device=None):
 
 # Data
 dataset = CLRDataset()
-train_dataset, val_dataset = random_split(dataset, lengths=[0.95, 0.05], generator=torch.Generator().manual_seed(42))
-train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, collate_fn=clr_sparse_collate, num_workers=2)
+train_len = int(len(dataset) * 0.8)
+lengths = [train_len, len(dataset) - train_len]
+train_dataset, val_dataset = random_split(dataset, lengths=lengths, generator=torch.Generator().manual_seed(42))
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=clr_sparse_collate, num_workers=2)
 val_dataloader = DataLoader(val_dataset, batch_size=128, shuffle=False, collate_fn=clr_sparse_collate)
 
 # test one batch 
@@ -49,7 +51,7 @@ checkpoint_callback = pl.callbacks.ModelCheckpoint(
     save_top_k=3,
     mode='min',
 )
-checkpoint = '/workspace/lightning_logs/version_21/checkpoints/model-epoch=07-val_loss=0.30.ckpt'
+checkpoint = None #'/workspace/lightning_logs/version_21/checkpoints/model-epoch=07-val_loss=0.30.ckpt'
 
 num_of_gpus = torch.cuda.device_count()
 assert num_of_gpus > 0, "This code must be run with at least one GPU"
