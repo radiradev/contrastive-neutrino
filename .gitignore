@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 lightning_logs/
-.devcontainer/
+#.devcontainer/
 
 # C extensions
 *.so

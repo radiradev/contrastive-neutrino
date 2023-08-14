@@ -1,0 +1,28 @@
+{
+	"name": "MinkowskiEngine with ROOT",
+	"dockerFile": "Dockerfile",
+	"workspaceMount": "source=/data/rradev/masked_autoencoder,target=/workspace,type=bind,consistency=cached",
+	"workspaceFolder": "/workspace",
+	"runArgs": [
+		"--gpus",
+		"all",
+		"-v", "/mnt/rradev/osf_data_512px:/mnt/rradev/osf_data_512px",
+		"-v", "/eos:/eos"
+	],
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"GitHub.copilot",
+				"ms-toolsai.jupyter"
+				
+			]
+		}
+	}
+  }
+  
