@@ -1,5 +1,8 @@
-from dataset.dataset import ConvertedDataset 
+## Large parts of this code are taken from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial17/SimCLR.html
+
+from sim_clr.dataset import CLRDataset
 from torch import nn
+import os
 import torch.nn.functional as F
 import torch.optim as optim
 import pytorch_lightning as pl
@@ -11,11 +14,6 @@ from sim_clr.network import SimCLR
 from MinkowskiEngine.utils import batch_sparse_collate
 from MinkowskiEngine import SparseTensor
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-
-## Large parts of this code are taken from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial17/SimCLR.html
-
-
-import os
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 NUM_WORKERS = 4
@@ -147,8 +145,8 @@ def train_logreg(batch_size, train_feats_data, test_feats_data, model_suffix, ma
 
 DATA_PATH = '/mnt/rradev/osf_data_512px/converted_data/'
 CKPT_PATH = '/workspace/lightning_logs/sim_clr/checkpoints/'
-train_dataset = ConvertedDataset(root=os.path.join(DATA_PATH, 'train'))
-test_dataset = ConvertedDataset(root=os.path.join(DATA_PATH, 'test'))
+train_dataset = CLRDataset(root=os.path.join(DATA_PATH, 'train'))
+test_dataset = CLRDataset(root=os.path.join(DATA_PATH, 'test'))
 
 simclr_model = SimCLR.load_from_checkpoint(checkpoint_path=os.path.join(CKPT_PATH, 'model-epoch=04-val_loss=0.33.ckpt'))
 train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename='train_feats_simclr.pt')
@@ -181,48 +179,3 @@ for num_samples in [10, 50, 100, 500, 1000, 5000, 10_000, 100_000]:
     clf.fit(X, y)
     y_pred = clf.predict(scaler.transform(test_feats_simclr.tensors[0].numpy()))
     print('Accuracy: ', accuracy_score(test_feats_simclr.tensors[1], y_pred))
-
-
-
-# # small_test = get_smaller_dataset(test_feats_simclr, 500)
-# _, full_training = train_logreg(batch_size=64,
-#                 train_feats_data=small,
-#                 test_feats_data=test_feats_simclr,
-#                 model_suffix='full',
-#                 feature_dim=train_feats_simclr.tensors[0].shape[1],
-#                 num_classes=5,
-#                 lr=1e-3,
-#                 weight_decay=1e-1,
-# )
-
-# print('Full training results: ', full_training)
-
-# # results = {}
-# # for num_examples_per_label in [10, 20, 50, 100, 200, 500]:
-# #     sub_train_set = get_smaller_dataset(train_feats_simclr, num_examples_per_label)
-# #     _, small_set_results = train_logreg(batch_size=64,
-# #                                         train_feats_data=sub_train_set,
-# #                                         test_feats_data=test_feats_simclr,
-# #                                         model_suffix=num_examples_per_label,
-# #                                         feature_dim=train_feats_simclr.tensors[0].shape[1],
-# #                                         num_classes=5,
-# #                                         lr=1e-3)
-# #     results[num_examples_per_label] = small_set_results
-
-# import matplotlib.pyplot as plt
-
-# dataset_sizes = sorted([k for k in results])
-# test_scores = [results[k]["test"] for k in dataset_sizes]
-
-# fig = plt.figure(figsize=(6,4))
-# plt.plot(dataset_sizes, test_scores, '--', color="#000", marker="*", markeredgecolor="#000", markerfacecolor="y", markersize=16)
-# plt.xscale("log")
-# plt.xticks(dataset_sizes, labels=dataset_sizes)
-# plt.title("SSL classification over dataset size", fontsize=14)
-# plt.xlabel("Number of examples per class")
-# plt.ylabel("Test accuracy")
-# plt.minorticks_off()
-# plt.savefig("ssl_logreg.png", dpi=300, bbox_inches="tight")
-
-# for k, score in zip(dataset_sizes, test_scores):
-#     print(f'Test accuracy for {k:3d} images per label: {100*score:4.2f}%')
