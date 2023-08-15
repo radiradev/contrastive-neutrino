@@ -5,6 +5,7 @@ __pycache__/
 
 lightning_logs/
 wandb/
+config/
 #.devcontainer/
 
 # C extensions

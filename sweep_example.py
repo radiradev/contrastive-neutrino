@@ -100,14 +100,12 @@ if __name__ == '__main__':
         'name': 'first_sweep',
         'metric': {
             'goal': 'minimize',
-            'name': 'validation_loss'
+            'name': 'val_loss'
         },
         'parameters': {
-            'n_hidden': {'values': [2,3,5,10]},
-            'lr': {'max': 1.0, 'min': 0.0001},
-            'noise': {'max': 1.0, 'min': 0.}
+            'batch_size': {'values': [256, 512, 1024, 2048]},
         }
     }
 
     sweep_id=wandb.sweep(sweep_config, project="test_sweep")
-    wandb.agent(sweep_id=sweep_id, function=train_model, count=5)
+    wandb.agent(sweep_id=sweep_id, function=train_model, count=4)
