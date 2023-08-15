@@ -1,4 +1,4 @@
-from dataset.dataset import ConvertedDataset
+from sim_clr.dataset import ConvertedDataset
 from train.network_wrapper import VoxelConvNextWrapper
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader

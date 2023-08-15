@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from MinkowskiEngine.utils import batch_sparse_collate
 
 from pytorch_lightning.loggers import WandbLogger
-from dataset.dataset import ConvertedDataset
+from sim_clr.dataset import ConvertedDataset
 from torch.utils.data import random_split, DataLoader
 
 

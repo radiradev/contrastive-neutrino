@@ -58,8 +58,6 @@ class LogisticRegression(pl.LightningModule):
         self._calculate_loss(batch, mode='test')
 
 
-
-
 def prepare_data_features(sim_clr, dataset, filename):
     features_path = '/workspace/sim_clr/clr_features'
     full_filename = os.path.join(features_path, filename)

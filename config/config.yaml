@@ -1,0 +1,8 @@
+model_type: single_particle_classfier
+
+data:
+  data_path: /mnt/rradev/osf_data_512px/converted_data/train
+  workspace: /workspace
+
+wandb_tmp_dir: /afs/cern.ch/work/r/rradev/public/lightning/wandb_tmp
+checkpoint: None
