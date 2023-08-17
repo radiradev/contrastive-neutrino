@@ -3,7 +3,7 @@ import torch
 import torchmetrics
 import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
-from sim_clr.loss import contrastive_loss
+from sim_clr.loss import contrastive_loss, NT_Xent
 from models.voxel_convnext import VoxelConvNeXtCLR
 
 
@@ -11,6 +11,8 @@ class SimCLR(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.model = VoxelConvNeXtCLR(in_chans=1, D=3)
+        print("Do not hard code these!")
+        self.criterion = contrastive_loss
 
     def forward(self, x):
         return self.model(x)
@@ -29,10 +31,11 @@ class SimCLR(pl.LightningModule):
         xj = self._create_tensor(xj[1], xj[0])
         xi_out = self.model(xi)
         xj_out = self.model(xj)
-        loss = contrastive_loss(xi_out, xj_out, gather_distributed=True)
+        loss = self.criterion(xi_out, xj_out, gather_distributed=True)
         return loss
     
     def training_step(self, batch, batch_idx):
+        # Must clear cache at regular interval
         loss = self._shared_step(batch, batch_idx)
         self.log('train_loss', loss, prog_bar=True)
         return loss

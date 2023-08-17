@@ -25,8 +25,8 @@ def dataloaders(batch_size: int, data_path: str, num_workers=16, pin_memory=True
     train_len = int(len(dataset) * 0.8)
     lengths = [train_len, len(dataset) - train_len]
     train_dataset, val_dataset = random_split(dataset, lengths=lengths, generator=torch.Generator().manual_seed(42))
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=clr_sparse_collate, num_workers=num_workers)
-    val_dataloader = DataLoader(val_dataset, batch_size=128, shuffle=False, collate_fn=clr_sparse_collate)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=clr_sparse_collate, num_workers=num_workers, drop_last=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=clr_sparse_collate, drop_last=True)
     return train_loader, val_dataloader
 
 # callbacks
@@ -41,7 +41,7 @@ num_of_gpus = torch.cuda.device_count()
 assert num_of_gpus > 0, "This code must be run with at least one GPU"
 
 
-wandb_logger = pl.loggers.WandbLogger()
+wandb_logger = pl.loggers.WandbLogger(project='contrastive-neutrino', log_model='all')
 
 # pytorch lightning requires setting:
 # devices=number of allocated slurm gpus = number of slurm tasks 
@@ -57,7 +57,7 @@ def train_model(batch_size):
     checkpoint = None if config['checkpoint'] == 'None' else config['checkpoint']
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path)
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=30, callbacks=[checkpoint_callback], strategy='ddp')
+    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, callbacks=[checkpoint_callback], strategy='ddp', logger=wandb_logger)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
     
 
