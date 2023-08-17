@@ -29,7 +29,7 @@ class SimCLR(pl.LightningModule):
         xj = self._create_tensor(xj[1], xj[0])
         xi_out = self.model(xi)
         xj_out = self.model(xj)
-        loss = contrastive_loss(xi_out, xj_out)
+        loss = contrastive_loss(xi_out, xj_out, gather_distributed=True)
         return loss
     
     def training_step(self, batch, batch_idx):
