@@ -1,15 +1,19 @@
 import torch
 import pytorch_lightning as pl
-from sim_clr.dataset import CLRDataset
-from sim_clr.network import SimCLR
-from torch.utils.data import random_split, DataLoader
+
 import os
+from single_particle_classifier.network_wrapper import SingleParticleModel
+import pytorch_lightning as pl
+from torch.utils.data import DataLoader
+from MinkowskiEngine.utils import batch_sparse_collate
+
+from pytorch_lightning.loggers import WandbLogger
+from sim_clr.dataset import CLRDataset
+from torch.utils.data import random_split, DataLoader
 import yaml
-import wandb
-from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-from data_utilities.collation import clr_sparse_collate
-import torch.distributed as dist
 import fire
+
+
 
 def load_yaml(path):
     with open(path, 'r') as f:
@@ -25,8 +29,8 @@ def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=
     train_len = int(len(dataset) * 0.8)
     lengths = [train_len, len(dataset) - train_len]
     train_dataset, val_dataset = random_split(dataset, lengths=lengths, generator=torch.Generator().manual_seed(42))
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=clr_sparse_collate, num_workers=num_workers, drop_last=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=clr_sparse_collate, drop_last=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=batch_sparse_collate, num_workers=num_workers, drop_last=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=batch_sparse_collate, drop_last=True)
     return train_loader, val_dataloader
 
 # callbacks
@@ -43,15 +47,13 @@ assert num_of_gpus > 0, "This code must be run with at least one GPU"
 
 wandb_logger = pl.loggers.WandbLogger(project='contrastive-neutrino', log_model='all')
 
-
 def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
     environment_variables = ['WANDB_DIR', 'WANDB_CACHE_DIR', 'WANDB_CONFIG_DIR', 'WANDB_DATA_DIR']
     for variable in environment_variables:
         os.environ[variable] = tmp_dir
 
-
-def train_model(batch_size, num_of_gpus, dataset_type, checkpoint=None, gather_distributed=True):
-    model = SimCLR(num_of_gpus, bool(gather_distributed))
+def train_model(batch_size, num_of_gpus, dataset_type, checkpoint=None):
+    model = SingleParticleModel()
     set_wandb_vars()
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
@@ -62,7 +64,3 @@ def train_model(batch_size, num_of_gpus, dataset_type, checkpoint=None, gather_d
 
 if __name__ == '__main__':
     fire.Fire(train_model)
-
-
-
-

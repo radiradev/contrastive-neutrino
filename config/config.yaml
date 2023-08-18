@@ -4,5 +4,5 @@ data:
   data_path: /pscratch/sd/r/rradev/converted_data/train
   workspace: /global/u1/r/rradev/contrastive-neutrino
 
-wandb_tmp_dir: None
+wandb_tmp_dir: /pscratch/sd/r/rradev/wandb
 checkpoint: None

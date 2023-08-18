@@ -8,12 +8,16 @@ from models.voxel_convnext import VoxelConvNeXtCLR
 
 
 class SimCLR(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, num_gpus, gather_distributed=True):
         super().__init__()
         self.model = VoxelConvNeXtCLR(in_chans=1, D=3)
-        print("Do not hard code these!")
         self.criterion = contrastive_loss
-
+        
+        # sometimes we might want to use multiple gpus but a smaller efective batch_size
+        if num_gpus > 1 and gather_distributed:
+            self.gather_distributed = True
+        else: 
+            self.gather_distributed = False
     def forward(self, x):
         return self.model(x)
     
@@ -31,7 +35,7 @@ class SimCLR(pl.LightningModule):
         xj = self._create_tensor(xj[1], xj[0])
         xi_out = self.model(xi)
         xj_out = self.model(xj)
-        loss = self.criterion(xi_out, xj_out, gather_distributed=True)
+        loss = self.criterion(xi_out, xj_out, gather_distributed=self.gather_distributed)
         return loss
     
     def training_step(self, batch, batch_idx):
@@ -47,7 +51,7 @@ class SimCLR(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         loss = self._shared_step(batch, batch_idx)
-        self.log('test_accuracy', self.test_accuracy, prog_bar=True)
+        self.log('test_accuracy', self.test_accuracy, prog_bar=self.gather_distributed)
         return loss
     
     def on_test_epoch_end(self):

@@ -9,6 +9,9 @@ config/
 checkpoints/
 *.ipynb
 slurm*
+artifacts/
+checkpoints/
+contrastive-neutrino/
 #.devcontainer/
 
 # C extensions

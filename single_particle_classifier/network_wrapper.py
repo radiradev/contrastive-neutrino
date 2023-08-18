@@ -6,7 +6,7 @@ import numpy as np
 import torchmetrics
 
 
-class VoxelConvNextWrapper(pl.LightningModule):
+class SingleParticleModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=5)

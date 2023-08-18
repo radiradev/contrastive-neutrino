@@ -29,6 +29,7 @@ def identity(coords, feats):
 class CLRDataset(torchvision.datasets.DatasetFolder):
     def __init__(
             self,
+            dataset_type,
             root='/mnt/rradev/osf_data_512px/converted_data/train',
             extensions='.npz',
             take_log = False,
@@ -37,6 +38,7 @@ class CLRDataset(torchvision.datasets.DatasetFolder):
 
     ):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
+        self.dataset_type = dataset_type
         self.take_log = take_log
         self.take_sqrt = take_sqrt
         self.clip = clip
@@ -68,7 +70,16 @@ class CLRDataset(torchvision.datasets.DatasetFolder):
 
         return coords, feat, label 
     
-    def apply_augmentations(self, coords_i, feat_i, label):
+    def classifier_augmentations(self, coord, feat, label):
+        funcs = np.random.choice([rotate, drop, shift_energy, translate], 2)
+        for func in funcs:
+            coord, feat = func(coord, feat) 
+        
+        feat = self.transform_energy(feat)
+        coord, feat = sparse_quantize(coord, feat)
+        return coord, feat, label
+    
+    def contrastive_augmentations(self, coords_i, feat_i, label):
         coords_j, feat_j = coords_i.clone(), feat_i.clone()
         funcs = [rotate, drop, shift_energy, translate] 
         
@@ -103,8 +114,14 @@ class CLRDataset(torchvision.datasets.DatasetFolder):
         path, _ = self.samples[index]
         sample = self.loader(path)
         coords, feat, label = self.preprocessing(sample)
-        x_i, x_j = self.apply_augmentations(coords, feat, label)
-        return x_i, x_j
+        if self.dataset_type == 'contrastive':
+            x_i, x_j = self.contrastive_augmentations(coords, feat, label)
+            return x_i, x_j
+        elif self.dataset_type == 'single_particle_augmented':
+            coords, feat, label = self.classifier_augmentations(coords, feat, label)
+            return coords, feat, label.unsqueeze(0)
+        elif self.dataset_type == 'single_particle_base':
+            return coords, feat, label.unsqueeze(0)
 
 
 
