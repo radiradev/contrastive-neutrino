@@ -5,4 +5,4 @@ data:
   workspace: /global/u1/r/rradev/contrastive-neutrino
 
 wandb_tmp_dir: /pscratch/sd/r/rradev/wandb
-checkpoint: None
+checkpoint_dirpath: /pscratch/sd/r/rradev/contrastive_neutrino_ckpt

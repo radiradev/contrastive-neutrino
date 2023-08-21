@@ -35,6 +35,7 @@ def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=
 
 # callbacks
 checkpoint_callback = pl.callbacks.ModelCheckpoint(
+    dirpath=config['checkpoint_dirpath'],
     monitor='val_loss',
     filename='model-{epoch:02d}-{val_loss:.2f}',
     save_top_k=3,
@@ -45,8 +46,6 @@ num_of_gpus = torch.cuda.device_count()
 assert num_of_gpus > 0, "This code must be run with at least one GPU"
 
 
-wandb_logger = pl.loggers.WandbLogger(project='contrastive-neutrino', log_model='all')
-
 def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
     environment_variables = ['WANDB_DIR', 'WANDB_CACHE_DIR', 'WANDB_CONFIG_DIR', 'WANDB_DATA_DIR']
     for variable in environment_variables:
@@ -55,9 +54,10 @@ def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
 def train_model(batch_size, num_of_gpus, dataset_type, checkpoint=None):
     model = SingleParticleModel()
     set_wandb_vars()
+    wandb_logger = pl.loggers.WandbLogger(project='contrastive-neutrino', log_model='all')
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, callbacks=[checkpoint_callback], strategy='ddp', logger=wandb_logger)
+    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=200, callbacks=[checkpoint_callback], strategy='ddp', logger=wandb_logger)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
     
 
