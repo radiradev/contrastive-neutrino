@@ -2,22 +2,17 @@ import torch
 import pytorch_lightning as pl
 from sim_clr.dataset import CLRDataset
 from sim_clr.network import SimCLR
+from single_particle_classifier.network_wrapper import SingleParticleModel
 from torch.utils.data import random_split, DataLoader
 import os
-import yaml
-import wandb
-from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-from data_utilities.collation import clr_sparse_collate
+from pytorch_lightning.loggers import WandbLogger
+from utils.data import clr_sparse_collate, load_yaml
 import torch.distributed as dist
 import fire
 
-def load_yaml(path):
-    with open(path, 'r') as f:
-        return yaml.load(f, Loader=yaml.FullLoader)
     
 config = load_yaml('config/config.yaml')
 
-# Data
 
 def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=16, pin_memory=True):
 
@@ -50,9 +45,17 @@ def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
 
 
 def train_model(batch_size, num_of_gpus, dataset_type, checkpoint=None, gather_distributed=True):
+    if model == "SimCLR":
+        model = SimCLR(num_of_gpus, bool(gather_distributed))
+
+    elif model == "SingleParticle":
+        model = SingleParticleModel()
+    else:
+        raise ValueError("Model must be one of 'SimCLR' or 'SingleParticle'")
+    
     model = SimCLR(num_of_gpus, bool(gather_distributed))
     set_wandb_vars()
-    wandb_logger = pl.loggers.WandbLogger(project='contrastive-neutrino', log_model='all')
+    wandb_logger = WandbLogger(project='contrastive-neutrino', log_model='all')
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
     trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=400, callbacks=[checkpoint_callback], strategy='ddp', logger=wandb_logger)

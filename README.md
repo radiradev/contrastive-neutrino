@@ -32,6 +32,10 @@ def translate(coords, feats, cube_size=512):
     translation = normalized_shift * (cube_size / 10)
     return coords + translation, feats
 ```
+
+##### Planning to add in the future:
+
+- Local energy scale - shift energy in each voxel independently 
 - Cutout (can learn representations that are robust even when particles are close to the edge)
 - Smearing the energy 
 

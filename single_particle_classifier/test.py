@@ -28,10 +28,6 @@ dataloader = DataLoader(dataset, batch_size=128, shuffle=True,collate_fn=batch_s
 
 # Initialize device
 model.to(device)
-
-# Testing Loop
-
-
 test_loss = 0.0
 
 alphas = np.linspace(-0.1, 0.1, 20)
