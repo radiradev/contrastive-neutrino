@@ -42,9 +42,6 @@ class CLRDataset(torchvision.datasets.DatasetFolder):
         self.take_log = take_log
         self.take_sqrt = take_sqrt
         self.clip = clip
-        if dataset_type == 'single_particle_leaky':
-            print('Using dataset designed to overfit!')
-        print("Dropped the rotations! FIX")
 
     def loader(self, path):
         return np.load(path)
@@ -126,14 +123,9 @@ class CLRDataset(torchvision.datasets.DatasetFolder):
             feat = self.transform_energy(feat)
             coords, feat = sparse_quantize(coords, feat)
             return coords, feat, label.unsqueeze(0)
+        else:
+            raise ValueError(f'Unknown dataset type {self.dataset_type}')
         
-        elif self.dataset_type == 'single_particle_leaky':
-            feat = self.transform_energy(feat)
-            coords, feat = sparse_quantize(coords, feat)
-            feat = torch.ones_like(feat) * label
-            return coords, feat, label.unsqueeze(0)
-
-
 
 if __name__ == '__main__':
     dataset = CLRDataset()
