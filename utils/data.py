@@ -5,6 +5,7 @@ import wandb
 from MinkowskiEngine.utils import sparse_collate
 
 
+
 def clr_sparse_collate(data, dtype=torch.int32, device=None):
     # Unzip the dataset into separate coordinate and feature tuples for i and j
     x_i, x_j = zip(*data)
@@ -27,8 +28,8 @@ def load_yaml(path):
         return yaml.load(f, Loader=yaml.FullLoader)
 
 
-def get_wandb_ckpt(artifact_name, project_name='rradev/contrastive-neutrino',  artifact_version='best'):
+def get_wandb_ckpt(artifact_name, project_name='rradev/contrastive-neutrino',  artifact_version='v190'):
     api = wandb.Api()
-    artifact = api.artifact(f"{project_name}/{artifact_name}:{artifact_version}")
-    artifact_dir = artifact.download('/pscratch/sd/r/rradev/artifacts')
+    artifact = api.artifact(f"{project_name}/{artifact_name}:{artifact_version}")    
+    artifact_dir = artifact.download(os.environ.get('SCRATCH'))
     return os.path.join(artifact_dir, 'model.ckpt')

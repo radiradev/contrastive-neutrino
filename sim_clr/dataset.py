@@ -2,7 +2,7 @@ import numpy as np
 import torchvision
 import torch
 
-from utilities.rotation_conversions import random_rotation
+from utils.rotation_conversions import random_rotation
 from MinkowskiEngine.utils import sparse_quantize
 
 # this must be faster to do when batched 

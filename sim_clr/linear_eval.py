@@ -10,7 +10,6 @@ from tqdm import tqdm
 from sim_clr.network import SimCLR
 from sim_clr.dataset import CLRDataset
 from torch import nn
-from sklearn.metrics import accuracy_score
 from sklearn.utils import shuffle
 from snapml import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
