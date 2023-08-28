@@ -12,6 +12,7 @@ slurm*
 artifacts/
 checkpoints/
 contrastive-neutrino/
+*.pt
 #.devcontainer/
 
 # C extensions

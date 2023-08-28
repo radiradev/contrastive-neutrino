@@ -8,7 +8,7 @@ from models.voxel_convnext import VoxelConvNeXtCLR
 
 
 class SimCLR(pl.LightningModule):
-    def __init__(self, num_gpus, gather_distributed=True):
+    def __init__(self, num_gpus=1, gather_distributed=True):
         super().__init__()
         self.model = VoxelConvNeXtCLR(in_chans=1, D=3)
         self.criterion = contrastive_loss
@@ -58,5 +58,5 @@ class SimCLR(pl.LightningModule):
         self.log('test_accuracy_epoch', self.test_accuracy.compute())
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-5)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer

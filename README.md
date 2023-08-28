@@ -30,7 +30,10 @@ Adding custom packages described below
 - Tutorial on [`edep2supera`](https://www.deeplearnphysics.org/edep2supera_tutorials/)
 
 # Learning Representations
-- Rotation
+- Rotations 
+- Translations
+- Energy scale
+- Dropping voxels
+- Cutout (can learn representations that are robust even when particles are close to the edge)
 - Smearing the energy 
-- Masking out voxels
-- Changing the energy scale - remove a certain percentage of the energy value within the event.
+

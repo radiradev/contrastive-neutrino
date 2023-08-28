@@ -3,7 +3,7 @@
 #SBATCH -A dune_g
 #SBATCH -C gpu
 #SBATCH -q regular
-#SBATCH -t 10:00:00
+#SBATCH -t 20:00:00
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=4
 #SBATCH -c 32
@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 train.py --batch_size 128 --num_of_gpus 1 --dataset_type contrastive 
+srun shifter python3 -m single_particle_classifier.classifier_train --batch_size 256 --num_of_gpus 4 --dataset_type single_particle_augmented

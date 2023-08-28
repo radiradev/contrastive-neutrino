@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 train.py --batch_size 128 --num_of_gpus 4 --dataset_type contrastive --checkpoint /global/homes/r/rradev/contrastive-neutrino/artifacts/contrastive/model.ckpt
+srun shifter python3 train.py --batch_size 128 --num_of_gpus 4 --dataset_type contrastive --checkpoint /global/homes/r/rradev/contrastive-neutrino/sim_clr/artifacts/model-8pxqwawz:v71/model.ckpt

@@ -13,6 +13,7 @@ class SingleParticleModel(pl.LightningModule):
         self.loss = torch.nn.CrossEntropyLoss()
         self.test_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
         self.val_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
+        self.multi_acc = torchmetrics.Accuracy(task='multiclass', avg=None, num_classes=5)
 
     def forward(self, x):
         return self.model(x)

@@ -38,7 +38,8 @@ checkpoint_callback = pl.callbacks.ModelCheckpoint(
     dirpath=config['checkpoint_dirpath'],
     monitor='val_loss',
     filename='model-{epoch:02d}-{val_loss:.2f}',
-    save_top_k=3,
+    save_top_k=2,
+    save_last=True,
     mode='min',
 )
 

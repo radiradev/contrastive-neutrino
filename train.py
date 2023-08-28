@@ -34,8 +34,9 @@ checkpoint_callback = pl.callbacks.ModelCheckpoint(
     dirpath=config['checkpoint_dirpath'],
     monitor='val_loss',
     filename='model-{epoch:02d}-{val_loss:.2f}',
-    save_top_k=3,
+    save_top_k=2,
     mode='min',
+    save_last=True,
 )
 
 num_of_gpus = torch.cuda.device_count()
@@ -54,7 +55,7 @@ def train_model(batch_size, num_of_gpus, dataset_type, checkpoint=None, gather_d
     wandb_logger = pl.loggers.WandbLogger(project='contrastive-neutrino', log_model='all')
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=200, callbacks=[checkpoint_callback], strategy='ddp', logger=wandb_logger)
+    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=400, callbacks=[checkpoint_callback], strategy='ddp', logger=wandb_logger)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
     
 

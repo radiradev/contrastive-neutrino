@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 -m single_particle_classifier.classifier_train --batch_size 256 --num_of_gpus 4 --dataset_type single_particle_augmented --checkpoint /global/homes/r/rradev/contrastive-neutrino/artifacts/augmented-classifier/model.ckpt
+srun shifter python3 train.py --batch_size 128 --num_of_gpus 4 --dataset_type contrastive --gather_distributed False
