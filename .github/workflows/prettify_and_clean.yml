@@ -1,0 +1,46 @@
+name: Prettify Python and Clean Jupyter Notebooks
+
+on:
+  push:
+    branches:
+      - main  # Replace with your default branch if different
+
+jobs:
+  prettify-and-clean:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install autopep8
+        pip install nbconvert
+
+    - name: Prettify Python Code
+      run: |
+        autopep8 --in-place --recursive --aggressive --aggressive .
+
+    - name: Remove Output from Jupyter Notebooks
+      run: |
+        find . -name "*.ipynb" -exec jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace {} \;
+
+    - name: Check for modified files
+      id: git-check
+      run: |
+        git diff --exit-code || echo "git-diff-exit-code=$?" >> $GITHUB_ENV
+
+    - name: Commit and Push Changes
+      if: env.git-diff-exit-code == '1'
+      run: |
+        git config --global user.name 'GitHub Action'
+        git config --global user.email 'github-action@example.com'
+        git add -A
+        git commit -m "Automated code prettification and notebook cleanup"
+        git push
