@@ -34,9 +34,9 @@ def read_file(filename, num_expected_events=100):
     segments = f['tracks']
 
     pckt_event_ids = EvtParser.packet_to_eventid(assn, segments)
-    event_ids, counts = np.unique(pckt_event_ids, return_counts=True)
     
-    t0_grp = EvtParser.get_t0(packets, run_config)
+    trigger_mask = packets['packet_type'] == 7
+    t0_grp = packets[trigger_mask].reshape(4, -1)['timestamp'][0] * run_config['CLOCK_CYCLE']
     event_ids = np.unique(pckt_event_ids[pckt_event_ids != -1]) 
     if len(t0_grp) != len(event_ids):
         raise ValueError(f'Number of events in t0 ({len(t0_grp)}) does not match number of events in event_ids ({len(event_ids)})')
