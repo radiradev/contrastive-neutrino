@@ -9,15 +9,15 @@ from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
 
 
-common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive')
-larnd_path = Path(common /'larndsim_out')
+common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles')
+larnd_path = Path(common /'larndsim_throws')
 files = sorted(list(larnd_path.glob('*h5')))
 
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
 
 run_config, geom_dict = util.detector_configuration(detector) 
-output_folder = '/global/cfs/cdirs/dune/users/rradev/contrastive/npz_files'
+output_path = Path(common / 'larndsim_throws_converted')
 
 def pdg_to_name(pdg):
     pdg_map = {11: 'electron', 22: 'gamma', 13: 'muon', -13: 'muon', 
@@ -29,7 +29,6 @@ def read_file(filename, num_expected_events=100):
     f = h5py.File(filename, 'r')
     packets = f['packets'] # readout
     vertices = f['vertices']
-    trajectories = f['trajectories']
     assn = f['mc_packets_assn'] # association between readout and MC
     segments = f['tracks']
 
@@ -41,7 +40,7 @@ def read_file(filename, num_expected_events=100):
     if len(t0_grp) != len(event_ids):
         raise ValueError(f'Number of events in t0 ({len(t0_grp)}) does not match number of events in event_ids ({len(event_ids)})')
 
-    return packets, pckt_event_ids, trajectories, t0_grp, event_ids, vertices
+    return packets, pckt_event_ids, t0_grp, event_ids, vertices
 
 
 def find_parent_particle(trajectories, event_id):
@@ -52,7 +51,7 @@ def find_parent_particle(trajectories, event_id):
     return pdg_to_name(int(parent_particle['pdgId']))
 
         
-def save_event(event_id, i_event, filename, packets, pckt_event_ids, trajectories, vertices, t0_grp, geom_dict, run_config):
+def save_event(event_id, i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config):
     pckt_mask = pckt_event_ids == event_id
     packets_ev = packets[pckt_mask]
     t0 = t0_grp[i_event]
@@ -68,8 +67,9 @@ def save_event(event_id, i_event, filename, packets, pckt_event_ids, trajectorie
     
     vertex = np.stack([vertices_ev['x_vert'], vertices_ev['y_vert'], vertices_ev['z_vert']]) / 10 # cm
 
-    particle_class = find_parent_particle(trajectories, event_id)
-    np.savez(f'{output_folder}/{particle_class}/{filename.stem}_eventID_{event_id}.npz', 
+    particle_class = filename.stem.split('_')[0]
+    assert particle_class in ['electron', 'gamma', 'muon', 'pion', 'proton']
+    np.savez(f'{output_path}/{particle_class}/{filename.stem}_eventID_{event_id}.npz', 
              adc=adc, 
              coordinates=coordinates,
              charge=charge,
@@ -79,9 +79,9 @@ def save_event(event_id, i_event, filename, packets, pckt_event_ids, trajectorie
 
 def process_file(filename):
     try:
-        packets, pckt_event_ids, trajectories, t0_grp, event_ids, vertices = read_file(filename)
+        packets, pckt_event_ids, t0_grp, event_ids, vertices = read_file(filename)
         for i_event, event_id in enumerate(event_ids):
-            save_event(event_id,i_event, filename, packets, pckt_event_ids, trajectories, vertices, t0_grp, geom_dict, run_config)
+            save_event(event_id,i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config)
     except ValueError as e:
         print(f'Error in file {filename}: {e}')
 
