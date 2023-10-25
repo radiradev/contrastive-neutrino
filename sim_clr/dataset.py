@@ -1,7 +1,8 @@
 import numpy as np
 import torchvision
 import torch
-
+import os
+from glob import glob
 from utils.rotation_conversions import random_rotation
 from MinkowskiEngine.utils import sparse_quantize
 
@@ -26,11 +27,58 @@ def translate(coords, feats, cube_size=512):
 def identity(coords, feats):
     return coords, feats
 
+class ThrowsDataset(torchvision.datasets.DatasetFolder):
+    def __init__(
+            self,
+            dataset_type,
+            root,
+            extensions='.npz',
+    ):
+        super().__init__(root=root, extensions=extensions, loader=self.loader)
+        self.dataset_type = dataset_type
+    
+    def loader(self, path):
+        return np.load(path)
+    
+    def grab_other_path(self, path):
+        basename, dirname = os.path.basename(path), os.path.dirname(path)
+        up_to_index = "_".join(basename.split("_")[:-1])
+        print(up_to_index)
+        paths = glob(os.path.join(dirname, up_to_index + "*"))
+        # don't pick the same file
+        paths.remove(path)
+        return np.random.choice(paths)
+    
+    def __getitem__(self, index: int):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        """
+        if self.dataset_type == 'single_particle':
+            path, label = self.samples[index]
+            sample = self.loader(path)
+            coords, feats = sample['coordinates'], sample['adc']
+            coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=0.38)
+            if feats.ndim != 2:
+                print(os.path.basename(path), feats.shape)
+            return coords, feats, torch.tensor(label).long().unsqueeze(0)
+        
+        else:
+            path, _ = self.samples[index]
+            sample = self.loader(path)
+            other_path = self.grab_other_path(path)
+            other_sample = self.loader(other_path)
+            return sample, other_sample
+
+
 class CLRDataset(torchvision.datasets.DatasetFolder):
     def __init__(
             self,
             dataset_type,
-            root='/mnt/rradev/osf_data_512px/converted_data/train',
+            root='/pscratch/sd/r/rradev/converted_data/train',
             extensions='.npz',
             take_log = False,
             take_sqrt = True,
@@ -128,9 +176,10 @@ class CLRDataset(torchvision.datasets.DatasetFolder):
         
 
 if __name__ == '__main__':
-    dataset = CLRDataset()
+    dataset = CLRDataset('contrastive')
     xi, xj = dataset[0]
-    assert xi[0].shape == xj[0].shape
-    assert xi[1].shape == xj[1].shape
-    assert torch.equal(xi[0], xj[0])
-    assert torch.equal(xi[1], xj[1])
+    print(xi[0].shape, xj[0].shape)
+
+    dataset_larnd = ThrowsDataset(dataset_type='single_particle', root='/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles/larndsim_throws_converted')
+    coords, feats, label = dataset_larnd[0]
+    print(coords.shape, feats.shape, label.shape)

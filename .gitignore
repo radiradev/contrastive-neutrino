@@ -18,6 +18,8 @@ contrastive-neutrino/
 # C extensions
 *.so
 
+systematic_aware/
+
 # Distribution / packaging
 .Python
 build/

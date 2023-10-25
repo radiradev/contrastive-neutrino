@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles')
 larnd_path = Path(common /'larndsim_throws')
-files = sorted(list(larnd_path.glob('*h5')))
+files = sorted(list(larnd_path.glob('pion*h5')))
 
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
@@ -27,6 +27,7 @@ def pdg_to_name(pdg):
 
 def read_file(filename, num_expected_events=100):
     f = h5py.File(filename, 'r')
+    #if unable to read file, skip
     packets = f['packets'] # readout
     vertices = f['vertices']
     assn = f['mc_packets_assn'] # association between readout and MC
@@ -83,7 +84,10 @@ def process_file(filename):
         for i_event, event_id in enumerate(event_ids):
             save_event(event_id,i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config)
     except ValueError as e:
-        print(f'Error in file {filename}: {e}')
+        pass 
+        # print(f'Error in file {filename}: {e}')
+    except KeyError as e:
+        print(f'Key error in file {filename}: {e}')
 
 
 if __name__ == '__main__':

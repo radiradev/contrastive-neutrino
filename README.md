@@ -75,6 +75,12 @@ pip install pytorch-lightning timm --no-deps
 
 
 ## Extra info :books:
+##### Particle Bomb 
+DLPGenerator [Tutorial](https://www.deeplearnphysics.org/DLPGenerator/)
+ND Simulation [How To](https://hackmd.io/@CuhPVDY3Qregu7G4lr1p7A/H1d1Zj4zi)
+DUNE ND LAr Sim [Tutorial](https://github.com/sam-fogarty/simulation-tutorial_DUNE-ND-LAr)
+##### Other
+
 - Tutorial on [`lartpc_mlreco3d`](http://stanford.edu/~ldomine/) by Laura
 - Tutorial on [ML Reco for DUNE ND](https://indico.fnal.gov/event/50338/)
 - `lartpc_mlreco3d` [docs](https://lartpc-mlreco3d.readthedocs.io/)
