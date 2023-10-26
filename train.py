@@ -15,15 +15,14 @@ import fire
 config = load_yaml('config/config.yaml')
 
 
-def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=16, pin_memory=True):
+def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=4, pin_memory=True):
 
-    dataset = ThrowsDataset(dataset_type, config['data']['data_path'])
-    train_len = int(len(dataset) * 0.8)
-    lengths = [train_len, len(dataset) - train_len]
-    train_dataset, val_dataset = random_split(dataset, lengths=lengths, generator=torch.Generator().manual_seed(42))
+    train_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'train'))
+    val_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'val'))
+
     collate_fn = batch_sparse_collate if dataset_type == 'single_particle' else clr_sparse_collate
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, drop_last=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
     return train_loader, val_dataloader
 
 # callbacks
@@ -46,7 +45,7 @@ def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
         os.environ[variable] = tmp_dir
 
 
-def train_model(batch_size, num_of_gpus, dataset_type, model, checkpoint=None, gather_distributed=True):
+def train_model(batch_size=256, num_of_gpus=1, dataset_type='contrastive', model='SimCLR', checkpoint=None, gather_distributed=False):
     if model == "SimCLR":
         model = SimCLR(num_of_gpus, bool(gather_distributed))
 
@@ -59,7 +58,9 @@ def train_model(batch_size, num_of_gpus, dataset_type, model, checkpoint=None, g
     wandb_logger = WandbLogger(project='contrastive-neutrino', log_model='all')
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=400, callbacks=[checkpoint_callback], strategy='ddp', logger=wandb_logger)
+    
+    # set val and test batches to 0.1 corresponds to num of nominal events, probably doesn't matter too much that we might go over the same ones multiple times
+    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=10, limit_train_batches=0.1, limit_val_batches=0.1, callbacks=[checkpoint_callback], logger=wandb_logger)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
     
 

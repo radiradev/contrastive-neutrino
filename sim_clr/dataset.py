@@ -27,51 +27,75 @@ def translate(coords, feats, cube_size=512):
 def identity(coords, feats):
     return coords, feats
 
+import os
+import numpy as np
+import torchvision
+from glob import glob
+
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
-    def __init__(
-            self,
-            dataset_type,
-            root,
-            extensions='.npz',
-    ):
+    quantization_size = 0.38
+    
+    def __init__(self, dataset_type, root, extensions='.npz'):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
-    
+
+        # Create the cache
+        self.create_path_cache()
+
     def loader(self, path):
         return np.load(path)
-    
-    def grab_other_path(self, path):
-        basename, dirname = os.path.basename(path), os.path.dirname(path)
-        up_to_index = "_".join(basename.split("_")[:-1])
-        print(up_to_index)
-        paths = glob(os.path.join(dirname, up_to_index + "*"))
-        # don't pick the same file
-        paths.remove(path)
-        return np.random.choice(paths)
-    
-    def __getitem__(self, index: int):
-        """
-        Args:
-            index (int): Index
 
-        Returns:
-            tuple: (sample, target) where target is class_index of the target class.
-        """
+    def create_path_cache(self):
+        """Prepares a cache dictionary based on file identifiers."""
+        self.path_cache = {}
+        
+        for path, _ in self.samples:
+            # Generate the identifier for the current path
+            parts = os.path.basename(path).split('_')
+            identifier_parts = [part for part in parts if "throw" not in part and "nominal" not in part]
+            identifier = "_".join(identifier_parts)
+            
+            # Append the path to its identifier's list in the cache
+            if identifier not in self.path_cache:
+                self.path_cache[identifier] = []
+            self.path_cache[identifier].append(path)
+
+    def grab_other_path(self, path):
+        """Given a path, select another file with the same eventID and file number."""
+        # Generate the identifier for the given path
+        parts = os.path.basename(path).split('_')
+        identifier_parts = [part for part in parts if "throw" not in part and "nominal" not in part]
+        identifier = "_".join(identifier_parts)
+        
+        # Retrieve potential matches from cache
+        potential_matches = [p for p in self.path_cache[identifier] if p != path]
+        
+        # Randomly select one
+        if potential_matches:
+            return np.random.choice(potential_matches)
+        else:
+            print(Warning, f"Did not find matching file for {path}")
+            return path
+
+
+    def __getitem__(self, index: int):
         if self.dataset_type == 'single_particle':
             path, label = self.samples[index]
             sample = self.loader(path)
             coords, feats = sample['coordinates'], sample['adc']
-            coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=0.38)
-            if feats.ndim != 2:
-                print(os.path.basename(path), feats.shape)
+            coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size)
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
         
-        else:
+        elif self.dataset_type == 'contrastive':
             path, _ = self.samples[index]
-            sample = self.loader(path)
-            other_path = self.grab_other_path(path)
-            other_sample = self.loader(other_path)
-            return sample, other_sample
+            other_path = self.grab_other_path(path)  # This will now use the cache
+            sample, other_sample = self.loader(path), self.loader(other_path)
+
+            coords_i, feats_i = sample['coordinates'], sample['charge']
+            coords_j, feats_j = other_sample['coordinates'], other_sample['charge']
+            coords_i, feats_i = sparse_quantize(coords_i, np.expand_dims(feats_i, axis=1), quantization_size=self.quantization_size)
+            coords_j, feats_j = sparse_quantize(coords_j, np.expand_dims(feats_j, axis=1), quantization_size=self.quantization_size)
+            return (coords_i, feats_i), (coords_j, feats_j)                  
 
 
 class CLRDataset(torchvision.datasets.DatasetFolder):

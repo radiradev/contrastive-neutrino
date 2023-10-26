@@ -24,7 +24,7 @@ class SimCLR(pl.LightningModule):
     def _create_tensor(self, features, coordinates):
 
         return SparseTensor(
-            features=features,
+            features=features.float(),
             coordinates=coordinates,
             device=self.device
         )
@@ -35,18 +35,18 @@ class SimCLR(pl.LightningModule):
         xj = self._create_tensor(xj[1], xj[0])
         xi_out = self.model(xi)
         xj_out = self.model(xj)
-        loss = self.criterion(xi_out, xj_out, gather_distributed=self.gather_distributed)
+        loss = self.criterion(xi_out, xj_out)
         return loss
     
     def training_step(self, batch, batch_idx):
         # Must clear cache at regular interval
         loss = self._shared_step(batch, batch_idx)
-        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_loss', loss, prog_bar=True, batch_size=256)
         return loss
     
     def validation_step(self, batch, batch_idx):
         loss = self._shared_step(batch, batch_idx)
-        self.log('val_loss', loss)
+        self.log('val_loss', loss, batch_size=256)
         return loss
 
     def test_step(self, batch, batch_idx):
