@@ -8,8 +8,9 @@ This is a two step approach:
 ## Training 
 There two options, training the contrastive learning model or the direct classifier: 
 
-`python3 train.py` #by default trains the contrastive learning model
-`python3 train.py --dataset single_particle --model SingleParticle` trains the direct classifier model
+`python3 train.py` by default trains the contrastive learning model
+
+`python3 train.py --dataset_type single_particle --model SingleParticle` trains the direct classifier model
 
 ## Docker installation :computer:
 Use the `rradev/minkowski:torch1.12_final` image. 
@@ -40,7 +41,7 @@ with the edeps in `edeps-h5` and `edep-root` and the larnd-sim files in `larndsi
 The converted `.npz` files are also available on scratch at `larndsim_throws_converted`, this should be used for training as IO from scratch would be faster than from CFS.
 
 ### Recreate the dataset 
-Use the `larnd.convert_data.py` script to convert the files to `.npz`, you may to adjust the input and output filepaths. Then use the `test_train_split.py` script to split the data using files up to number 230 as training, 230 < n < 240 -validation and n > 240 for testing.
+Use the `larnd.convert_data.py` script to convert the files to `.npz`, you may to adjust the input and output filepaths. It will split the data using files up to number 230 as training, 230 < n < 240 -validation and n > 240 for testing. It will also filter out files with 3 voxels or less.
 
 
 # PiLArNet Method

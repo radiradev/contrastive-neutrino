@@ -7,14 +7,15 @@ from LarpixParser import util as util
 from multiprocessing import Pool, cpu_count
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
+import os
 
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
 common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles')
 larnd_path = Path(common /'larndsim_throws')
 
-run_config, geom_dict = util.detector_configuration(detector) 
-output_path = Path(common / 'larndsim_throws_converted')
+run_config, geom_dict = util.detector_configuration(detector)  
+output_path = os.path.join(os.environ['PSCRATCH'], 'larndsim_throws_converted_new')
 
 def pdg_to_name(pdg):
     pdg_map = {11: 'electron', 22: 'gamma', 13: 'muon', -13: 'muon', 
@@ -78,14 +79,27 @@ def save_event(event_id, i_event, filename, packets, pckt_event_ids, vertices, t
     
     vertex = np.stack([vertices_ev['x_vert'], vertices_ev['y_vert'], vertices_ev['z_vert']]) / 10 # cm
 
-    particle_class = filename.stem.split('_')[0]
-    assert particle_class in ['electron', 'gamma', 'muon', 'pion', 'proton']
-    np.savez(f'{output_path}/{particle_class}/{filename.stem}_eventID_{event_id}.npz', 
-             adc=adc, 
-             coordinates=coordinates,
-             charge=charge,
-             vertex=vertex
-    )
+    particle_name = filename.stem.split('_')[0]
+    assert particle_name in ['electron', 'gamma', 'muon', 'pion', 'proton']
+
+    file_index = int(filename.stem.split("_")[3])
+    
+    if file_index < 230:
+        target_folder = os.path.join(output_path, "train", particle_name)
+
+    elif file_index < 240:
+        target_folder = os.path.join(output_path, "val", particle_name)
+
+    else:
+        target_folder = os.path.join(output_path, "test", particle_name)
+    
+    if len(coordinates) > 3:
+        np.savez(f'{target_folder}/{filename.stem}_eventID_{event_id}.npz', 
+                adc=adc, 
+                coordinates=coordinates,
+                charge=charge,
+                vertex=vertex
+        )
 
 
 def process_file(filename):
