@@ -5,6 +5,46 @@ We explore a constrastive learning framework based on [SimCLR](https://arxiv.org
 This is a two step approach:
 - Pretraining phase - we create two augmented versions of events within the batch, then using all $2N$ events, we create a matrix of $(2N)^2$ pairs. Pairs originated from the same event are known as *positive pairs*, while the rest are *negative*. The model tries to get the positive pairs close together, and the negative pairs far apart in the embedding space. 
 
+## Training 
+There two options, training the contrastive learning model or the direct classifier: 
+
+`python3 train.py` #by default trains the contrastive learning model
+`python3 train.py --dataset single_particle --model SingleParticle` trains the direct classifier model
+
+## Docker installation :computer:
+Use the `rradev/minkowski:torch1.12_final` image. 
+The image uses a custom version of `MinkowskiEngine` with [depthwise convolutions](https://github.com/fededagos/MinkowskiEngine).
+
+Additionally we have to install:
+
+```bash
+pip install tensorboardx einops LarpixParser wandb 
+pip install pytorch-lightning timm --no-deps
+```
+
+## Throws Dataset 
+More info about the generation can be found in my [dune-nd-detector-sim](https://github.com/radiradev/dune-nd-detector-sim) repo.
+
+### Directories
+Generation `edep-sim` -> `larnd-sim` -> `.npz` model input
+
+- `edep-sim` - `/wclustre/dune/rradev/larnd-contrast/individual_particles` There are 250 files per particle type in both `.h5` and `root` format. 
+
+- `larnd-sim` - `/wclustre/dune/awilkins/contrastive_learning/larndsim_10throws_5particles_125500eventseven.tar.gz`
+
+On NERSC everything is available in:
+```/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles``` 
+
+with the edeps in `edeps-h5` and `edep-root` and the larnd-sim files in `larndsim-throws` and the converted version in `larndsim_throws_converted`.
+
+The converted `.npz` files are also available on scratch at `larndsim_throws_converted`, this should be used for training as IO from scratch would be faster than from CFS.
+
+### Recreate the dataset 
+Use the `larnd.convert_data.py` script to convert the files to `.npz`, you may to adjust the input and output filepaths. Then use the `test_train_split.py` script to split the data using files up to number 230 as training, 230 < n < 240 -validation and n > 240 for testing.
+
+
+# PiLArNet Method
+
 ## Augmentations :recycle:
 
 Currently used: 
@@ -59,19 +99,6 @@ We convert the dataset to a single particle per event. It belongs to any of the 
 
 #### Dataset conversion
  - To read in the data we use the [dlp_opendata_api](https://github.com/DeepLearnPhysics/dlp_opendata_api)
-
-## Docker :computer:
-Use the `rradev/minkowski:torch1.12_final` image. 
-The image uses a custom version of `MinkowskiEngine` with [depthwise convolutions](https://github.com/fededagos/MinkowskiEngine).
-
-Additionally we have to install:
-
-```bash
-pip install tensorboardx einops LarpixParser wandb 
-pip install pytorch-lightning timm --no-deps
-```
-
-
 
 
 ## Extra info :books:
