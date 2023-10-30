@@ -11,6 +11,7 @@ class SingleParticleModel(pl.LightningModule):
         super().__init__()
         self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=5)
         self.loss = torch.nn.CrossEntropyLoss()
+        self.train_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
         self.test_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
         self.val_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
         self.multi_acc = torchmetrics.Accuracy(task='multiclass', avg=None, num_classes=5)
@@ -32,14 +33,17 @@ class SingleParticleModel(pl.LightningModule):
         return loss, predictions, labels
     
     def training_step(self, batch, batch_idx):
-        loss, _, _ = self._shared_step(batch, batch_idx)
+        loss, predictions, labels = self._shared_step(batch, batch_idx)
+        self.train_accuracy.update(predictions, labels)
         self.log('train_loss', loss, prog_bar=True)
         return loss
+
+    def on_train_epoch_end(self):
+        self.log('train_accuracy_epoch', self.train_accuracy.compute())
     
     def validation_step(self, batch, batch_idx):
         loss, predictions, labels = self._shared_step(batch, batch_idx)
         self.val_accuracy.update(predictions, labels)
-        self.log('val_accuracy', self.val_accuracy, prog_bar=True)
         self.log('val_loss', loss)
         return loss
     

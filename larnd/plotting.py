@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-def plot_event(x, y, z, dE, event_id, particle_name):
+def plot_event(x, y, z, dE=None, event_id="", particle_name=""):
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111, projection='3d', alpha=0.2)
 
