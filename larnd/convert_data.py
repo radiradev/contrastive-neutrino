@@ -8,13 +8,10 @@ from multiprocessing import Pool, cpu_count
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
 
-
-common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles')
-larnd_path = Path(common /'larndsim_throws')
-files = sorted(list(larnd_path.glob('pion*h5')))
-
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
+common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles')
+larnd_path = Path(common /'larndsim_throws')
 
 run_config, geom_dict = util.detector_configuration(detector) 
 output_path = Path(common / 'larndsim_throws_converted')
@@ -34,12 +31,25 @@ def read_file(filename, num_expected_events=100):
     segments = f['tracks']
 
     pckt_event_ids = EvtParser.packet_to_eventid(assn, segments)
-    
-    trigger_mask = packets['packet_type'] == 7
-    t0_grp = packets[trigger_mask].reshape(4, -1)['timestamp'][0] * run_config['CLOCK_CYCLE']
     event_ids = np.unique(pckt_event_ids[pckt_event_ids != -1]) 
+
+
+    trigger_mask = packets['packet_type'] == 7
+    
+    # I used reshape incorrectly here, it should be (n, 4) not (4, n)
+    t0_grp = packets[trigger_mask].reshape(-1, 4)['timestamp'][:, 0] * run_config['CLOCK_CYCLE'] # fixed potential bug here 
     if len(t0_grp) != len(event_ids):
-        raise ValueError(f'Number of events in t0 ({len(t0_grp)}) does not match number of events in event_ids ({len(event_ids)})')
+        # removing second repeated trigger
+        unique_triggers, trigger_counts = np.unique(t0_grp, return_counts=True)
+        repeated_triggers = unique_triggers[trigger_counts > 1]
+        assert len(repeated_triggers) == 1, 'More than one repeated trigger found'
+        # find the indices of the repeated triggers in t0_grp
+        repeated_trigger_indices = np.where(np.isin(t0_grp, repeated_triggers))[0]
+        assert len(repeated_trigger_indices) == 2, 'More than one pair of repeated triggers found'
+        # remove the second trigger in the pair
+        t0_grp = np.delete(t0_grp, repeated_trigger_indices[1]) # remove the second trigger
+
+    assert len(t0_grp) == len(event_ids), f'Number of events in t0 ({len(t0_grp)}) does not match number of events in event_ids ({len(event_ids)})'
 
     return packets, pckt_event_ids, t0_grp, event_ids, vertices
 
@@ -91,4 +101,8 @@ def process_file(filename):
 
 
 if __name__ == '__main__':
-    process_map(process_file, files, max_workers=cpu_count())
+
+    for particle_type in ['electron', 'muon', 'gamma', 'pion', 'proton']:
+        print(f'Processing {particle_type} files')
+        files = list(larnd_path.glob(f'{particle_type}*h5'))
+        process_map(process_file, files, max_workers=128)
