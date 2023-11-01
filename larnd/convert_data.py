@@ -15,7 +15,7 @@ common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_partic
 larnd_path = Path(common /'larndsim_throws')
 
 run_config, geom_dict = util.detector_configuration(detector)  
-output_path = os.path.join(os.environ['PSCRATCH'], 'larndsim_throws_converted_new')
+output_path = os.path.join(os.environ['PSCRATCH'], 'larndsim_throws_converted_nominal')
 
 def pdg_to_name(pdg):
     pdg_map = {11: 'electron', 22: 'gamma', 13: 'muon', -13: 'muon', 
@@ -118,5 +118,5 @@ if __name__ == '__main__':
 
     for particle_type in ['electron', 'muon', 'gamma', 'pion', 'proton']:
         print(f'Processing {particle_type} files')
-        files = list(larnd_path.glob(f'{particle_type}*h5'))
+        files = list(larnd_path.glob(f'{particle_type}*_nominal.h5'))
         process_map(process_file, files, max_workers=128)

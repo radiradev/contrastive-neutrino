@@ -36,9 +36,9 @@ Generation `edep-sim` -> `larnd-sim` -> `.npz` model input
 On NERSC everything is available in:
 ```/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles``` 
 
-with the edeps in `edeps-h5` and `edep-root` and the larnd-sim files in `larndsim-throws` and the converted version in `larndsim_throws_converted`.
+with the edeps in `edeps-h5` and `edep-root` and the larnd-sim files in `larndsim-throws`.
 
-The converted `.npz` files are also available on scratch at `larndsim_throws_converted`, this should be used for training as IO from scratch would be faster than from CFS.
+The converted `.npz` files are also available on scratch at `larndsim_throws_converted_new`, this should be used for training as IO from scratch would be faster than from CFS.
 
 ### Recreate the dataset 
 Use the `larnd.convert_data.py` script to convert the files to `.npz`, you may to adjust the input and output filepaths. It will split the data using files up to number 230 as training, 230 < n < 240 -validation and n > 240 for testing. It will also filter out files with 3 voxels or less.

@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
 import numpy as np
 import torchmetrics
+from torchmetrics.functional import accuracy
 
 
 class SingleParticleModel(pl.LightningModule):
@@ -11,10 +12,9 @@ class SingleParticleModel(pl.LightningModule):
         super().__init__()
         self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=5)
         self.loss = torch.nn.CrossEntropyLoss()
-        self.train_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
         self.test_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
         self.val_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
-        self.multi_acc = torchmetrics.Accuracy(task='multiclass', avg=None, num_classes=5)
+        self.batch_size = 256
 
     def forward(self, x):
         return self.model(x)
@@ -34,35 +34,19 @@ class SingleParticleModel(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         loss, predictions, labels = self._shared_step(batch, batch_idx)
-        self.train_accuracy.update(predictions, labels)
-        self.log('train_loss', loss, prog_bar=True)
+        self.log('train_acc', accuracy(predictions, labels), on_step=True, on_epoch=False, prog_bar=True, batch_size=self.batch_size)
+        self.log('train_loss', loss, prog_bar=True, on_step=True, on_epoch=False, batch_size=self.batch_size)
         return loss
-
-    def on_train_epoch_end(self):
-        self.log('train_accuracy_epoch', self.train_accuracy.compute())
     
     def validation_step(self, batch, batch_idx):
         loss, predictions, labels = self._shared_step(batch, batch_idx)
-        self.val_accuracy.update(predictions, labels)
-        self.log('val_loss', loss)
+        self.val_accuracy(predictions, labels)
+        self.log('val_acc', self.val_accuracy,on_step=False, on_epoch=True, batch_size=self.batch_size)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, batch_size=self.batch_size)
         return loss
-    
-    def on_validation_epoch_end(self):
-        self.log('val_accuracy_epoch', self.val_accuracy.compute())
-
-    def test_step(self, batch, batch_idx):
-        loss, predictions, labels = self._shared_step(batch, batch_idx)
-        self.test_accuracy.update(predictions, labels)
-        self.log('test_loss', loss)
-        self.log('test_accuracy', self.test_accuracy, prog_bar=True)
-        return loss
-    
-    def on_test_epoch_end(self):
-        self.log('test_accuracy_epoch', self.test_accuracy.compute())
-
 
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
 

@@ -18,7 +18,10 @@ config = load_yaml('config/config.yaml')
 def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=64, pin_memory=True):
 
     train_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'train'))
-    val_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'test'))
+    val_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'nominal', 'val'))
+    # train_len = int(len(dataset) * 0.9)
+    # train_dataset, val_dataset = random_split(dataset, [train_len, val_len], generator=torch.Generator().manual_seed(42))
+
 
     collate_fn = batch_sparse_collate if dataset_type == 'single_particle' else clr_sparse_collate
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
@@ -45,7 +48,7 @@ def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
         os.environ[variable] = tmp_dir
 
 
-def train_model(batch_size=512, num_of_gpus=1, dataset_type='contrastive', model='SimCLR', checkpoint=None, gather_distributed=False):
+def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model='SingleParticle', checkpoint=None, gather_distributed=False, run_name=None):
     if model == "SimCLR":
         model = SimCLR(num_of_gpus, bool(gather_distributed))
 
@@ -55,15 +58,13 @@ def train_model(batch_size=512, num_of_gpus=1, dataset_type='contrastive', model
         raise ValueError("Model must be one of 'SimCLR' or 'SingleParticle'")
     
     set_wandb_vars()
-    wandb_logger = WandbLogger(project='contrastive-neutrino', log_model='all')
+    wandb_logger = WandbLogger(name=run_name, project='contrastive-neutrino', log_model='all')
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
     
     # set val and test batches to 0.1 corresponds to num of nominal events, probably doesn't matter too much that we might go over the same ones multiple times
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, limit_train_batches=0.1, callbacks=[checkpoint_callback], logger=wandb_logger)
+    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, limit_train_batches=0.1, callbacks=[checkpoint_callback], logger=wandb_logger, log_every_n_steps=5)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
-    
-
 
 if __name__ == '__main__':
     fire.Fire(train_model)
