@@ -28,8 +28,12 @@ def load_yaml(path):
         return yaml.load(f, Loader=yaml.FullLoader)
 
 
-def get_wandb_ckpt(artifact_name, project_name='rradev/contrastive-neutrino',  artifact_version='v190'):
+def get_wandb_ckpt(artifact_name: str, return_name=False):
     api = wandb.Api()
-    artifact = api.artifact(f"{project_name}/{artifact_name}:{artifact_version}")    
+    artifact = api.artifact(f"{artifact_name}")    
     artifact_dir = artifact.download(os.environ.get('SCRATCH'))
-    return os.path.join(artifact_dir, 'model.ckpt')
+    artifact_dir = os.path.join(artifact_dir, 'model.ckpt')
+
+    if return_name:
+        return artifact_dir, artifact.name
+    return artifact_dir

@@ -8,13 +8,13 @@ from torchmetrics.functional import accuracy
 
 
 class SingleParticleModel(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, batch_size=256):
         super().__init__()
         self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=5)
         self.loss = torch.nn.CrossEntropyLoss()
         self.test_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
         self.val_accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=5)
-        self.batch_size = 256
+        self.batch_size = batch_size
 
     def forward(self, x):
         return self.model(x)
@@ -31,6 +31,11 @@ class SingleParticleModel(pl.LightningModule):
         
         loss = self.loss(predictions, labels)
         return loss, predictions, labels
+    
+    def predict_(self, batch):
+        batch = (x.cuda() for x in batch)
+        _, predictions, label = self._shared_step(batch, batch_idx=None)
+        return predictions, label
     
     def training_step(self, batch, batch_idx):
         loss, predictions, labels = self._shared_step(batch, batch_idx)

@@ -10,6 +10,7 @@ import torch
 from torch.utils import data
 from tqdm import tqdm
 from copy import deepcopy
+from sim_clr.network import SimCLR
 from single_particle_classifier.network_wrapper import SingleParticleModel
 from MinkowskiEngine.utils import batch_sparse_collate
 from MinkowskiEngine import SparseTensor
@@ -70,7 +71,7 @@ CKPT_PATH = '/global/homes/r/rradev/contrastive-neutrino/sim_clr/artifacts/model
 train_dataset = CLRDataset(root=os.path.join(DATA_PATH, 'train'), dataset_type='single_particle_base')
 test_dataset = CLRDataset(root=os.path.join(DATA_PATH, 'test'), dataset_type='single_particle_base')
 
-simclr_model = SingleParticleModel.load_from_checkpoint(checkpoint_path=os.path.join(CKPT_PATH, 'model.ckpt'))
+simclr_model = SimCLR.load_from_checkpoint(checkpoint_path=os.path.join(CKPT_PATH, 'model.ckpt'))
 train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename='train_feats_simclr.pt')
 test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename='test_feats_simclr.pt')
 

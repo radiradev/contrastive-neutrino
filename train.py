@@ -10,6 +10,8 @@ from utils.data import clr_sparse_collate, load_yaml
 from MinkowskiEngine.utils import batch_sparse_collate
 import torch.distributed as dist
 import fire
+from utils.data import get_wandb_ckpt
+
 
     
 config = load_yaml('config/config.yaml')
@@ -18,7 +20,8 @@ config = load_yaml('config/config.yaml')
 def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=64, pin_memory=True):
 
     train_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'train'))
-    val_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'nominal', 'val'))
+    #val_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'val'))
+    val_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'val'))
     # train_len = int(len(dataset) * 0.9)
     # train_dataset, val_dataset = random_split(dataset, [train_len, val_len], generator=torch.Generator().manual_seed(42))
 
@@ -48,12 +51,12 @@ def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
         os.environ[variable] = tmp_dir
 
 
-def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model='SingleParticle', checkpoint=None, gather_distributed=False, run_name=None):
+def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model='SingleParticle', wandb_checkpoint=None, gather_distributed=False, run_name=None):
     if model == "SimCLR":
-        model = SimCLR(num_of_gpus, bool(gather_distributed))
+        model = SimCLR(batch_size, num_of_gpus, bool(gather_distributed))
 
     elif model == "SingleParticle":
-        model = SingleParticleModel()
+        model = SingleParticleModel(batch_size)
     else:
         raise ValueError("Model must be one of 'SimCLR' or 'SingleParticle'")
     
@@ -62,6 +65,11 @@ def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', m
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
     
+    if wandb_checkpoint is not None:
+        checkpoint = get_wandb_ckpt(wandb_checkpoint)
+    else:
+        checkpoint = None
+
     # set val and test batches to 0.1 corresponds to num of nominal events, probably doesn't matter too much that we might go over the same ones multiple times
     trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, limit_train_batches=0.1, callbacks=[checkpoint_callback], logger=wandb_logger, log_every_n_steps=5)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)

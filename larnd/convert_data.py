@@ -11,11 +11,11 @@ import os
 
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
-common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles')
-larnd_path = Path(common /'larndsim_throws')
+common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/all_positive_max')
+larnd_path = Path(common /'larndsim_out')
 
 run_config, geom_dict = util.detector_configuration(detector)  
-output_path = os.path.join(os.environ['PSCRATCH'], 'larndsim_throws_converted_nominal')
+output_path = os.path.join(common, 'larndsim_converted')
 
 def pdg_to_name(pdg):
     pdg_map = {11: 'electron', 22: 'gamma', 13: 'muon', -13: 'muon', 
@@ -38,17 +38,30 @@ def read_file(filename, num_expected_events=100):
     trigger_mask = packets['packet_type'] == 7
     
     # I used reshape incorrectly here, it should be (n, 4) not (4, n)
-    t0_grp = packets[trigger_mask].reshape(-1, 4)['timestamp'][:, 0] * run_config['CLOCK_CYCLE'] # fixed potential bug here 
+    t0_grp = packets[trigger_mask].reshape(-1, 4)['timestamp'][:, 0] * run_config['CLOCK_CYCLE'] # fixed potential bug here
     if len(t0_grp) != len(event_ids):
+        print(f"Length of t0 {len(t0_grp)} does not match length of events ids {len(event_ids)}")
+        print("Removing extra triggers ...")
         # removing second repeated trigger
         unique_triggers, trigger_counts = np.unique(t0_grp, return_counts=True)
         repeated_triggers = unique_triggers[trigger_counts > 1]
-        assert len(repeated_triggers) == 1, 'More than one repeated trigger found'
+        if len(repeated_triggers) > 1:
         # find the indices of the repeated triggers in t0_grp
-        repeated_trigger_indices = np.where(np.isin(t0_grp, repeated_triggers))[0]
-        assert len(repeated_trigger_indices) == 2, 'More than one pair of repeated triggers found'
-        # remove the second trigger in the pair
-        t0_grp = np.delete(t0_grp, repeated_trigger_indices[1]) # remove the second trigger
+            repeated_trigger_indices = np.where(np.isin(t0_grp, repeated_triggers))[0]
+            repeated_trigger_pairs = repeated_trigger_indices.reshape(-1, 2)
+            column_diff = repeated_trigger_pairs[:, 1] - repeated_trigger_pairs[:, 0]
+            assert np.all(column_diff == 1), 'Repeated triggers are not next to each other'
+            
+            # remove the second trigger in each pair
+            t0_grp = np.delete(t0_grp, repeated_trigger_pairs[:, 1])
+            print(t0_grp.shape, len(event_ids))
+        elif len(repeated_triggers) == 1:
+            repeated_trigger_indices = np.where(np.isin(t0_grp, repeated_triggers))[0]
+            assert len(repeated_trigger_indices) == 2, 'More than one pair of repeated triggers found'
+            # remove the second trigger in the pair
+            t0_grp = np.delete(t0_grp, repeated_trigger_indices[1]) # remove the second trigger
+        else:
+            raise ValueError('Triggers are not repeated')
 
     assert len(t0_grp) == len(event_ids), f'Number of events in t0 ({len(t0_grp)}) does not match number of events in event_ids ({len(event_ids)})'
 
@@ -81,18 +94,17 @@ def save_event(event_id, i_event, filename, packets, pckt_event_ids, vertices, t
 
     particle_name = filename.stem.split('_')[0]
     assert particle_name in ['electron', 'gamma', 'muon', 'pion', 'proton']
-
     file_index = int(filename.stem.split("_")[3])
-    
-    if file_index < 230:
-        target_folder = os.path.join(output_path, "train", particle_name)
+    target_folder = os.path.join(output_path, particle_name)
 
-    elif file_index < 240:
-        target_folder = os.path.join(output_path, "val", particle_name)
+#     if file_index < 230:
+#         target_folder = os.path.join(output_path, "train", particle_name)
 
-    else:
-        target_folder = os.path.join(output_path, "test", particle_name)
-    
+#     elif file_index < 240:
+#         target_folder = os.path.join(output_path, "val", particle_name)
+
+#     else:
+#         target_folder = os.path.join(output_path, "test", particle_name)
     if len(coordinates) > 3:
         np.savez(f'{target_folder}/{filename.stem}_eventID_{event_id}.npz', 
                 adc=adc, 
@@ -108,15 +120,13 @@ def process_file(filename):
         for i_event, event_id in enumerate(event_ids):
             save_event(event_id,i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config)
     except ValueError as e:
-        pass 
-        # print(f'Error in file {filename}: {e}')
+        print(f'Error in file {filename}: {e}')
     except KeyError as e:
         print(f'Key error in file {filename}: {e}')
 
 
 if __name__ == '__main__':
-
-    for particle_type in ['electron', 'muon', 'gamma', 'pion', 'proton']:
+    for particle_type in ['proton','electron', 'pion', 'muon', 'gamma']: 
         print(f'Processing {particle_type} files')
-        files = list(larnd_path.glob(f'{particle_type}*_nominal.h5'))
+        files = list(larnd_path.glob(f'{particle_type}*.h5'))
         process_map(process_file, files, max_workers=128)

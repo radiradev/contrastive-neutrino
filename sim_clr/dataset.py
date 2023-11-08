@@ -74,9 +74,30 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         if potential_matches:
             return np.random.choice(potential_matches)
         else:
-            print(Warning, f"Did not find matching file for {path}")
+            print(f"Did not find matching file for {path}")
             return path
+    
 
+    def contrastive_augmentations(self, xi, xj):
+        funcs = [rotate, drop, shift_energy, translate] 
+
+        coords_i, feat_i = xi
+        coords_j, feat_j = xj
+    
+        # draw functions and augment i
+        funcs_i = np.random.choice(funcs, 2)
+        funcs_j = np.random.choice(funcs, 2)
+
+        for func in funcs_i:
+            coords_i, feat_i = func(coords_i, feat_i)
+        
+        for func in funcs_j:
+            coords_j, feat_j = func(coords_j, feat_j)
+        
+        coords_i, feat_i = sparse_quantize(coords_i, feat_i, quantization_size=self.quantization_size)
+        coords_j, feat_j = sparse_quantize(coords_j, feat_j, quantization_size=self.quantization_size)
+
+        return (coords_i, feat_i), (coords_j, feat_j) 
 
     def __getitem__(self, index: int):
         if self.dataset_type == 'single_particle':
@@ -91,11 +112,16 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             other_path = self.grab_other_path(path)  # This will now use the cache
             sample, other_sample = self.loader(path), self.loader(other_path)
 
-            coords_i, feats_i = sample['coordinates'], sample['charge']
-            coords_j, feats_j = other_sample['coordinates'], other_sample['charge']
-            coords_i, feats_i = sparse_quantize(coords_i, np.expand_dims(feats_i, axis=1), quantization_size=self.quantization_size)
-            coords_j, feats_j = sparse_quantize(coords_j, np.expand_dims(feats_j, axis=1), quantization_size=self.quantization_size)
-            return (coords_i, feats_i), (coords_j, feats_j)                  
+            coords_i, feats_i = sample['coordinates'], np.expand_dims(sample['charge'], axis=1)
+            coords_j, feats_j = other_sample['coordinates'], np.expand_dims(other_sample['charge'], axis=1)
+
+            
+            # coords_i, feats_i = sparse_quantize(coords_i, feats_i, quantization_size=self.quantization_size)
+            # coords_j, feats_j = sparse_quantize(coords_j, feats_j, quantization_size=self.quantization_size)
+
+            xi, xj = (torch.tensor(coords_i), torch.tensor(feats_i)), (torch.tensor(coords_j), torch.tensor(feats_j))
+            xi, xj = self.contrastive_augmentations(xi, xj)
+            return xi, xj              
 
 
 class CLRDataset(torchvision.datasets.DatasetFolder):

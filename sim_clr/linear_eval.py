@@ -8,20 +8,22 @@ from utils.data import load_yaml
 from torch.utils import data
 from tqdm import tqdm
 from sim_clr.network import SimCLR
-from sim_clr.dataset import CLRDataset
+from sim_clr.dataset import ThrowsDataset
 from torch import nn
 from sklearn.utils import shuffle
 from snapml import LogisticRegression
+from sklearn.linear_model import LogisticRegression as skLogisticRegression
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from sklearn.preprocessing import StandardScaler
 from MinkowskiEngine.utils import batch_sparse_collate
 from MinkowskiEngine import SparseTensor
 from utils.data import get_wandb_ckpt
+import pickle
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 NUM_WORKERS = 12 
-DATA_PATH = load_yaml('config/config.yaml')['data']['data_path']
+config = load_yaml('config/config.yaml')
 
 @torch.no_grad()
 def prepare_data_features(sim_clr, dataset, filename, features_path):
@@ -76,7 +78,8 @@ def train_linear_model(train_feats_simclr, test_feats_simclr):
     Returns:
         A tuple containing the trained logistic regression model, balanced accuracy score, and accuracy score.
     """
-    clf = LogisticRegression(use_gpu=True, verbose=True)
+    # clf = LogisticRegression(use_gpu=True, verbose=True)
+    clf = skLogisticRegression(verbose=True, solver='saga')
     X = train_feats_simclr.tensors[0].numpy()
     y = train_feats_simclr.tensors[1].numpy()
 
@@ -87,25 +90,32 @@ def train_linear_model(train_feats_simclr, test_feats_simclr):
     X, y = shuffle(X, y, random_state=42)  # Shuffling the data
     X = scaler.fit_transform(X)
     clf.fit(X, y)
+    filename = 'trained_bdt.pkl'
+    with open(filename, 'wb') as f:
+        pickle.dump(clf, f)
+    
+    with open('scaler.pkl', 'wb') as f:
+        pickle.dump(scaler, f)
     y_pred = clf.predict(scaler.transform(test_X))
     return clf, balanced_accuracy_score(test_y, y_pred), accuracy_score(test_y, y_pred)
 
 
 
 def evaluate(wandb_artifact=None):
-    train_dataset = CLRDataset(root=os.path.join(DATA_PATH, 'train'), dataset_type='single_particle_base')
-    test_dataset = CLRDataset(root=os.path.join(DATA_PATH, 'test'), dataset_type='single_particle_base')
+    dataset_type = 'single_particle'
+    train_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'))
+    test_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'test'))
 
     if wandb_artifact is None:
         print('Using a randomly initialized model as baseline')
         simclr_model = SimCLR()
-
+        artifact_name = 'randomly_initialized'
     else:
-        checkpoint_path = get_wandb_ckpt(wandb_artifact)
-        simclr_model = SimCLR.load_from_checkpoint(checkpoint_path)
+        ckpt_path, artifact_name = get_wandb_ckpt(wandb_artifact ,return_name=True)
+        simclr_model = SimCLR.load_from_checkpoint(ckpt_path)
 
-    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename='train_feats_simclr.pt')
-    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename='test_feats_simclr.pt')
+    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{artifact_name}_train_feats_simclr.pt', features_path=os.environ['PSCRATCH'])
+    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{artifact_name}_test_feats_simclr.pt', features_path=os.environ['PSCRATCH'])
 
     clf, balanced_acc, acc_score = train_linear_model(train_feats_simclr, test_feats_simclr)
     print(f'Balanced accuracy score: {balanced_acc}')

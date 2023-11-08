@@ -4,11 +4,15 @@ __pycache__/
 *$py.class
 
 lightning_logs/
+.vscode/
+.devcontainer/
 wandb/
 config/
 checkpoints/
 *.ipynb
 slurm*
+*.pkl
+*.log
 artifacts/
 checkpoints/
 contrastive-neutrino/
