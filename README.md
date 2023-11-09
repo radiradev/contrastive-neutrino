@@ -30,7 +30,29 @@ We vary 3 detector systematics parameters taken from the [paper](https://arxiv.o
 |-----------|------------|---------------|-----------------------|
 | E         | kV/cm      | 0.5           | [0.45, 0.55]          |
 | τ         | µs         | 2200          | [500, 5000]           |
-| DL        | cm²/µs     | 4 × 10⁻⁶      | [2 × 10⁻⁶, 9 × 10⁻⁶]  |
+| Dt        | cm²/µs     | 8.8 × 10⁻⁶     | [4 × 10⁻⁶, 14 × 10⁻⁶]    |
+
+
+We also have 2000 events with fixed values of the throws:
+| Throw Number | Description                               |
+|------|-------------------------------------------|
+| 1    | All positive max                          |
+| 2    | All negative max                          |
+| 3    | Efield positive max, others nominal       |
+| 4    | Trans diffusion positive max, others nominal |
+| 5    | Lifetime positive max, others nominal     |
+| 6    | Efield negative max, others nominal       |
+| 7    | Trans diffusion negative max, others nominal |
+| 8    | Lifetime negative max, others nominal     |
+| 9    | All 1/4x positive max                     |
+| 10   | All 1/4x negative max                     |
+| 11   | All 1/2x positive max                     |
+| 12   | All 1/2x negative max                     |
+| 13   | All 3/4x positive max                     |
+| 14   | All 3/4x negative max                     |
+| 15   | All nominal                               |
+| 16   | All 3x of positive max                    |
+| 17   | All 3x of negative max                    |
 
 
 More info about the generation can be found in my [dune-nd-detector-sim](https://github.com/radiradev/dune-nd-detector-sim) repo.
