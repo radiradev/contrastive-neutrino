@@ -24,7 +24,7 @@ pip install pytorch-lightning timm --no-deps
 ```
 
 ## Throws Dataset 
-We vary 3 detector systematics parameters taken from the [paper](https://arxiv.org/pdf/2309.04639.pdf) from SLAC. The parameters are the electron lifetime, trans diffusion and electric field strength.
+We vary 3 detector systematics parameters taken from the [paper](https://arxiv.org/pdf/2309.04639.pdf) from SLAC. The parameters are the electron lifetime, longitudinal diffusion and electric field strength.
 
 | Parameter | Units      | Nominal Value | Range                 |
 |-----------|------------|---------------|-----------------------|
