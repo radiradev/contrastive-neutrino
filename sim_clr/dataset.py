@@ -27,10 +27,6 @@ def translate(coords, feats, cube_size=512):
 def identity(coords, feats):
     return coords, feats
 
-import os
-import numpy as np
-import torchvision
-from glob import glob
 
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     quantization_size = 0.38
@@ -38,9 +34,10 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
     def __init__(self, dataset_type, root, extensions='.npz'):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
-
+        assert dataset_type in ['single_particle', 'contrastive', 'augmentations', 'single_particle_augmented'], f"Unknown dataset type {dataset_type}"
         # Create the cache
-        self.create_path_cache()
+        if dataset_type == 'contrastive':
+            self.create_path_cache()
 
     def loader(self, path):
         return np.load(path)
@@ -98,6 +95,13 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         coords_j, feat_j = sparse_quantize(coords_j, feat_j, quantization_size=self.quantization_size)
 
         return (coords_i, feat_i), (coords_j, feat_j) 
+    
+    def augment_single(self, coords, feats):
+        funcs = [rotate, drop, shift_energy, translate]
+        funcs = np.random.choice(funcs, 2)
+        for func in funcs:
+            coords, feats = func(coords, feats)
+        return coords, feats
 
     def __getitem__(self, index: int):
         if self.dataset_type == 'single_particle':
@@ -105,6 +109,15 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             sample = self.loader(path)
             coords, feats = sample['coordinates'], sample['adc']
             coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size)
+            return coords, feats, torch.tensor(label).long().unsqueeze(0)
+
+        elif self.dataset_type == 'single_particle_augmented':
+            path, label = self.samples[index]
+            sample = self.loader(path)
+            coords, feats = sample['coordinates'], sample['adc']
+            coords, feats = torch.tensor(coords), torch.tensor(np.expand_dims(feats, axis=1), dtype=torch.float32)
+            coords, feats = self.augment_single(coords, feats)
+            coords, feats = sparse_quantize(coords, feats, quantization_size=self.quantization_size)
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
         
         elif self.dataset_type == 'contrastive':
@@ -115,14 +128,18 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             coords_i, feats_i = sample['coordinates'], np.expand_dims(sample['charge'], axis=1)
             coords_j, feats_j = other_sample['coordinates'], np.expand_dims(other_sample['charge'], axis=1)
 
-            
-            # coords_i, feats_i = sparse_quantize(coords_i, feats_i, quantization_size=self.quantization_size)
-            # coords_j, feats_j = sparse_quantize(coords_j, feats_j, quantization_size=self.quantization_size)
-
             xi, xj = (torch.tensor(coords_i), torch.tensor(feats_i)), (torch.tensor(coords_j), torch.tensor(feats_j))
             xi, xj = self.contrastive_augmentations(xi, xj)
-            return xi, xj              
-
+            return xi, xj 
+        
+        elif self.dataset_type == 'augmentations':
+            path, _ = self.samples[index]
+            sample = self.loader(path)
+            coords, feats = sample['coordinates'], np.expand_dims(sample['charge'], axis=1)
+            # no idea why coords is a tensor while feats is a numpy array
+            xi, xj = (torch.tensor(coords), torch.tensor(feats)), (torch.tensor(coords), torch.tensor(feats))
+            xi, xj = self.contrastive_augmentations(xi, xj)
+            return xi, xj
 
 class CLRDataset(torchvision.datasets.DatasetFolder):
     def __init__(

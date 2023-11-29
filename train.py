@@ -18,15 +18,20 @@ config = load_yaml('config/config.yaml')
 
 
 def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=64, pin_memory=True):
+    if dataset_type == 'contrastive':
+        data_path = config['data']['data_path']
+    else:
+        data_path = config['data']['nominal_data_path']
 
-    train_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'train'))
-    #val_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'val'))
-    val_dataset = ThrowsDataset(dataset_type, os.path.join(config['data']['data_path'], 'val'))
-    # train_len = int(len(dataset) * 0.9)
-    # train_dataset, val_dataset = random_split(dataset, [train_len, val_len], generator=torch.Generator().manual_seed(42))
+    train_dataset = ThrowsDataset(dataset_type, os.path.join(data_path, 'train'))
 
+    val_data_path = data_path
+    if dataset_type != 'contrastive':
+        val_data_path = config['data']['nominal_data_path']
 
-    collate_fn = batch_sparse_collate if dataset_type == 'single_particle' else clr_sparse_collate
+    val_dataset = ThrowsDataset(dataset_type, os.path.join(val_data_path, 'val'))
+
+    collate_fn = batch_sparse_collate if dataset_type == 'single_particle' or dataset_type=='single_particle_augmented' else clr_sparse_collate
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
     return train_loader, val_dataloader
@@ -71,7 +76,7 @@ def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', m
         checkpoint = None
 
     # set val and test batches to 0.1 corresponds to num of nominal events, probably doesn't matter too much that we might go over the same ones multiple times
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, limit_train_batches=0.1, callbacks=[checkpoint_callback], logger=wandb_logger, log_every_n_steps=5)
+    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, limit_train_batches=1.0, callbacks=[checkpoint_callback], logger=wandb_logger, log_every_n_steps=5)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
 
 if __name__ == '__main__':

@@ -1,7 +1,25 @@
 data:
   data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_new
-  protons_only: /global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/larndsim_converted
-  all_max: /global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/all_positive_max/larndsim_converted/
+  nominal_data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_nominal
+  2k_particles: /global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/
+throws:
+  throw1: all_pos_max
+  throw2: all_pos_min
+  throw3: efield_pos_max
+  throw4: transdiff_pos_max
+  throw5: lifetime_pos_max
+  throw6: efield_neg_max
+  throw7: transdiff_neg_max
+  throw8: lifetime_neg_max
+  throw9: all_0.25_pos_max
+  throw10: all_0.25_neg_max
+  throw11: all_0.50_pos_max
+  throw12: all_0.50_neg_max
+  throw13: all_0.75_pos_max
+  throw14: all_0.75_neg_max
+  throw15: all_nominal
+  throw17: all_3xneg_max
+
 clr_features_path: /pscratch/sd/r/rradev/converted_data/clr_features
 wandb_tmp_dir: /pscratch/sd/r/rradev/wandb
 checkpoint_dirpath: /pscratch/sd/r/rradev/contrastive_neutrino_ckpt

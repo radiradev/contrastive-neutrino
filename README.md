@@ -5,6 +5,11 @@ We explore a constrastive learning framework based on [SimCLR](https://arxiv.org
 This is a two step approach:
 - Pretraining phase - we create two augmented versions of events within the batch, then using all $2N$ events, we create a matrix of $(2N)^2$ pairs. Pairs originated from the same event are known as *positive pairs*, while the rest are *negative*. The model tries to get the positive pairs close together, and the negative pairs far apart in the embedding space. 
 
+## To do 
+- [ ]  train contrastive model with augmentations only
+- [ ] more detailed comparison between the different throws
+- [ ] make a plot of similarity vs a shift in a parameter
+
 ## Training 
 There two options, training the contrastive learning model or the direct classifier: 
 

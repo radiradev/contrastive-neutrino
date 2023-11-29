@@ -3,7 +3,7 @@
 #SBATCH -A dune_g
 #SBATCH -C gpu
 #SBATCH -q regular
-#SBATCH -t 24:00:00
+#SBATCH -t 4:00:00
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=4
 #SBATCH -c 32
@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 train.py --batch_size 128 --num_of_gpus 4 --dataset_type contrastive --checkpoint /global/homes/r/rradev/contrastive-neutrino/sim_clr/artifacts/model-8pxqwawz:v71/model.ckpt
+srun shifter python3 train.py --run_name classifier-augmentations-throws --dataset_type single_particle_augmented --model SingleParticle --wandb_checkpoint rradev/model-registry/classifier-augmentations-throws:v0

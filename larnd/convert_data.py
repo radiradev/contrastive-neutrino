@@ -11,11 +11,9 @@ import os
 
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
-common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/all_positive_max')
-larnd_path = Path(common /'larndsim_out')
-
+common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/')
 run_config, geom_dict = util.detector_configuration(detector)  
-output_path = os.path.join(common, 'larndsim_converted')
+
 
 def pdg_to_name(pdg):
     pdg_map = {11: 'electron', 22: 'gamma', 13: 'muon', -13: 'muon', 
@@ -126,7 +124,40 @@ def process_file(filename):
 
 
 if __name__ == '__main__':
-    for particle_type in ['proton','electron', 'pion', 'muon', 'gamma']: 
-        print(f'Processing {particle_type} files')
-        files = list(larnd_path.glob(f'{particle_type}*.h5'))
-        process_map(process_file, files, max_workers=128)
+    throws = {
+        "throw1": 'all_pos_max',
+        "throw2": 'all_pos_min',
+        "throw3": 'efield_pos_max',
+        "throw4": 'transdiff_pos_max',
+        "throw5": 'lifetime_pos_max',
+        "throw6": 'efield_neg_max',
+        "throw7": 'transdiff_neg_max',
+        "throw8": 'lifetime_neg_max',
+        "throw9":  'all_0.25_pos_max',
+        "throw10": 'all_0.25_neg_max',
+        "throw11": 'all_0.50_pos_max',
+        "throw12": 'all_0.50_neg_max',
+        "throw13": 'all_0.75_pos_max',
+        "throw14": 'all_0.75_neg_max',
+        "throw15": 'all_nominal',
+        # "throw16": 'all_3xpos_max', coming soon (tm)
+        "throw17": 'all_3xneg_max',
+    }
+
+    for throw_number in throws.keys():        
+        print(f'Processing {throw_number}')
+        larnd_path = Path(common / 'larndsim')
+
+        output_path = os.path.join(common, 'larndsim_converted', throws[throw_number])
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        for particle_type in ['proton','electron', 'pion', 'muon', 'gamma']:
+                
+            if not os.path.exists(os.path.join(output_path, particle_type)):
+                os.makedirs(os.path.join(output_path, particle_type))
+            
+            print(f'Processing {particle_type} files')
+            files = list(larnd_path.glob(f'{particle_type}*_{throw_number}.h5'))
+            assert len(files) > 0, f'No files found for {particle_type} in {throw_number}'
+            process_map(process_file, files, max_workers=128)

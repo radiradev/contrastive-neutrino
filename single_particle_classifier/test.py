@@ -1,102 +1,131 @@
-import torch
+## Large parts of this code are taken from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial17/SimCLR.html
+## mostly copied from sim_clr/linear_eval
+import os
 import pytorch_lightning as pl
-from torch.utils.data import DataLoader
-from MinkowskiEngine.utils import batch_sparse_collate
-from sim_clr.dataset import CLRDataset
-import torchmetrics
-from MinkowskiEngine import SparseTensor
+import torch
+import joblib
+
+from torch.utils import data
 from single_particle_classifier.network_wrapper import SingleParticleModel
-from tqdm import tqdm
+from sim_clr.network import SimCLR
+from sim_clr.dataset import ThrowsDataset
+from torch import nn
+from sklearn.metrics import balanced_accuracy_score, accuracy_score
+from MinkowskiEngine.utils import batch_sparse_collate
+from MinkowskiEngine import SparseTensor
 from utils.data import get_wandb_ckpt, load_yaml
 import numpy as np
-import fire
 
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-DATA_PATH = load_yaml('config/config.yaml')['data']['data_path']
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+NUM_WORKERS = 12 
+config = load_yaml('config/config.yaml')
 
-def scale_energy(coords, feats, scale_factor):
-    scale_factor = 1.0 + torch.tensor(scale_factor, dtype=feats.dtype, device=feats.device)
-    feats = feats * scale_factor
-    return coords, feats
-
-
-def vary_parameter(model, dataset, param_range, augmentation,  num_iters=30, batch_size=128, num_classes=5):
-    num_params = len(param_range)
-    metrics_dict = {
-        'parameter_value': np.zeros(num_params),
-        'test_loss': np.zeros(num_params),
-        'accuracy': np.zeros(num_params),
-        'multi_acc': np.zeros((num_params, num_classes))  # Assuming 5 classes
-    }
-
-    accuracy = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes).to(device)
-    multi_acc = torchmetrics.Accuracy(task='multiclass', num_classes=num_classes, average=None).to(device)
-    criterion = torch.nn.CrossEntropyLoss()
-
-    for i, value in enumerate(param_range):
-        test_loss = 0.0
-        dataloader = DataLoader(dataset, batch_size=128, shuffle=True, collate_fn=batch_sparse_collate, generator=torch.Generator().manual_seed(42))
-        iterator = iter(dataloader)
+def classifier_predict(loader, model):
+    preds, labels = [], []
+    with torch.inference_mode():
+        for batch in loader:
+            pred, label = model.predict_(batch)
+            preds.append(pred)
+            labels.append(label)
         
-        for idx in tqdm(range(num_iters)):
-            batch_coords, batch_feats, target = next(iterator)
-            target = target.to(device)
+        preds = torch.vstack(preds)
+        labels = torch.hstack(labels) 
+    return preds.cpu().numpy(), labels.cpu().numpy()
+
+def sim_clr_predict(loader, sim_clr):
+    # these should not be hardcoded
+    sk_model = joblib.load('/global/homes/r/rradev/contrastive-neutrino/bdt_contrastive-model-augmentations-and-throws:v4_with_mlp.pkl')
+    scaler = joblib.load('/global/homes/r/rradev/contrastive-neutrino/scaler_contrastive-model-augmentations-and-throws:v4_with_mlp.pkl')
+    with torch.inference_mode():
+        preds, labels = [], []
+        for batch in loader:
+            batch_coords, batch_feats, label = batch
             batch_coords = batch_coords.to(device)
             batch_feats = batch_feats.to(device)
-
-            batch_coords, batch_feats = augmentation(batch_coords, batch_feats, value)
             stensor = SparseTensor(features=batch_feats.float(), coordinates=batch_coords)
+            features = sim_clr(stensor).cpu().numpy()
+            features = scaler.transform(features)
+            labels.append(label)
 
-            # Forward pass
-            with torch.no_grad():
-                output = model(stensor)
+            pred = sk_model.predict_proba(features)
+            preds.append(pred)
 
-            # Compute loss
-            loss = criterion(output, target)
-            test_loss += loss.item()
+        labels = np.hstack(labels)
+        preds = np.vstack(preds)
+    return preds, labels
 
-            # Compute metrics
-            preds = torch.argmax(output, dim=1)
-            accuracy.update(preds, target)
-            multi_acc.update(preds, target)
-            
-            if idx >= num_iters:
-                print("Max iterations reached")
-                break
+def latest_wandb_models(model_names=None):
+    """Returns a dictionary with the paths of the latest from
+    the wandb registry"""
+    if model_names is None:
+        model_names = [
+            'contrastive-model-augmentations-and-throws',
+            # 'classifier-nominal-only',
+            # 'classifier-throws-dataset'
+        ]
+    print(f'Loading models: {model_names}')
+    models = {
+        name: get_wandb_ckpt(f"rradev/model-registry/{name}:latest") for name in model_names
+    }
+    return models
 
-        # Save metrics for this parameter value
-        metrics_dict['parameter_value'][i] = value
-        metrics_dict['test_loss'][i] = test_loss / num_iters
-        metrics_dict['accuracy'][i] = accuracy.compute().item()
-        metrics_dict['multi_acc'][i, :] = multi_acc.compute().cpu().numpy()
+def load_clr_model(ckpt_path):
+    clr = SimCLR.load_from_checkpoint(ckpt_path).cuda()
+    network = clr.model
+    #network.mlp = nn.Identity() # Removing projection head g(.)
+    network.eval()
+    network.to(device)
+    return network
 
-        # Reset metrics
-        accuracy.reset()
-        multi_acc.reset()
+def load_models(model_names=None):
+    # load all the models
+    models_paths = latest_wandb_models(model_names)
+    model_names = list(models_paths.keys())
+    models = {}
+    for name in model_names:
+        if 'classifier' in name:
+        # Action for the specific model
+            models[name] = SingleParticleModel.load_from_checkpoint(models_paths[name]).cuda()
+        else:
+        # Alternative action for other models
+            models[name] = load_clr_model(models_paths[name])
+    return models
 
-    return metrics_dict
+def evaluate_models(models, throw_type):
 
-
-
-
-def vary_parameters(artifact_name):
-    ckpt_path = get_wandb_ckpt(artifact_name)
-    model = SingleParticleModel.load_from_checkpoint(ckpt_path)
-    model.eval()
-
-    # Prepare DataLoader
-    dataset = CLRDataset(dataset_type='single_particle_base', root=DATA_PATH)
-    model.to(device)
-
-    # Define parameter ranges
-    energy_scale_range = np.linspace(-0.3, 0.3, 50)
-    metrics = vary_parameter(model, dataset, energy_scale_range, scale_energy)
-    np.savez('vary_energy_scale.npz', **metrics)
-
+    data_path = os.path.join(config['data']['2k_particles'],'larndsim_converted', throw_type)
+    dataset = ThrowsDataset(dataset_type='single_particle', root=data_path)
+    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True)    
+               
+    sample_size = 1792 # batch_size * 7 not all events present in the larnd data
+    results = {}
+    for model_name in models.keys():
+        if 'classifier' in model_name:
+            preds, labels = classifier_predict(loader, models[model_name])
+        else:
+            preds, labels = sim_clr_predict(loader, models[model_name])
+        print(labels.shape, preds.shape)
+        acc = accuracy_score(labels, preds.argmax(axis=1))
+        bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
+        print(f'{throw_type}_{model_name} accuracy: {acc}')
+        print(f'{model_name} balanced accuracy: {bacc}')
+        results[model_name] = {
+            'preds': preds,
+            'labels': labels
+        }
+    return results
     
+
 if __name__ == '__main__':
-    fire.Fire(vary_parameters)
+    models = load_models()
+    print('Models loaded', models.keys())
+    results = {}
+    for throw in config['throws'].values():
+        print(f'Processing {throw}')
+        results[throw] = evaluate_models(models, throw)
+    joblib.dump(results, 'results_mlp.pkl')
     
-        
-        
+
+
+

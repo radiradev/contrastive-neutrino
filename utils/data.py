@@ -31,7 +31,7 @@ def load_yaml(path):
 def get_wandb_ckpt(artifact_name: str, return_name=False):
     api = wandb.Api()
     artifact = api.artifact(f"{artifact_name}")    
-    artifact_dir = artifact.download(os.environ.get('SCRATCH'))
+    artifact_dir = artifact.download(os.path.join(os.environ.get('SCRATCH'), artifact_name))
     artifact_dir = os.path.join(artifact_dir, 'model.ckpt')
 
     if return_name:

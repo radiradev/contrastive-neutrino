@@ -26,7 +26,7 @@ NUM_WORKERS = 12
 config = load_yaml('config/config.yaml')
 
 @torch.no_grad()
-def prepare_data_features(sim_clr, dataset, filename, features_path):
+def prepare_data_features(sim_clr, dataset, filename, features_path, drop_mlp=True):
     full_filename = os.path.join(features_path, filename)
 
     if os.path.exists(full_filename):
@@ -37,7 +37,8 @@ def prepare_data_features(sim_clr, dataset, filename, features_path):
     
     # Prepare model
     network = sim_clr.model
-    network.mlp = nn.Identity()# Removing projection head g(.)
+    if drop_mlp:
+        network.mlp = nn.Identity()# Removing projection head g(.)
     network.eval()
     network.to(device)
 
@@ -67,7 +68,7 @@ def prepare_data_features(sim_clr, dataset, filename, features_path):
 
     return data.TensorDataset(feats, labels)
 
-def train_linear_model(train_feats_simclr, test_feats_simclr):
+def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
     """
     Trains a logistic regression model on the given training features and evaluates it on the given test features.
 
@@ -90,18 +91,18 @@ def train_linear_model(train_feats_simclr, test_feats_simclr):
     X, y = shuffle(X, y, random_state=42)  # Shuffling the data
     X = scaler.fit_transform(X)
     clf.fit(X, y)
-    filename = 'trained_bdt.pkl'
+    filename = f'bdt_{identifier}.pkl'
     with open(filename, 'wb') as f:
         pickle.dump(clf, f)
     
-    with open('scaler.pkl', 'wb') as f:
+    with open(f'scaler_{identifier}.pkl', 'wb') as f:
         pickle.dump(scaler, f)
     y_pred = clf.predict(scaler.transform(test_X))
     return clf, balanced_accuracy_score(test_y, y_pred), accuracy_score(test_y, y_pred)
 
 
 
-def evaluate(wandb_artifact=None):
+def evaluate(wandb_artifact=None, drop_mlp=True):
     dataset_type = 'single_particle'
     train_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'))
     test_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'test'))
@@ -114,10 +115,14 @@ def evaluate(wandb_artifact=None):
         ckpt_path, artifact_name = get_wandb_ckpt(wandb_artifact ,return_name=True)
         simclr_model = SimCLR.load_from_checkpoint(ckpt_path)
 
-    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{artifact_name}_train_feats_simclr.pt', features_path=os.environ['PSCRATCH'])
-    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{artifact_name}_test_feats_simclr.pt', features_path=os.environ['PSCRATCH'])
 
-    clf, balanced_acc, acc_score = train_linear_model(train_feats_simclr, test_feats_simclr)
+    identifier = f'{artifact_name}_no_mlp' if drop_mlp else f'{artifact_name}_with_mlp'
+    print(f'Evaluating {identifier}')
+
+    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{identifier}_train_feats_simclr.pt', features_path=os.environ['PSCRATCH'], drop_mlp=drop_mlp)
+    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{identifier}_test_feats_simclr.pt', features_path=os.environ['PSCRATCH'], drop_mlp=drop_mlp)
+
+    clf, balanced_acc, acc_score = train_linear_model(train_feats_simclr, test_feats_simclr, identifier=identifier)
     print(f'Balanced accuracy score: {balanced_acc}')
     print(f'Accuracy score: {acc_score}')
 
