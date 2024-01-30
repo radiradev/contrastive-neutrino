@@ -3,7 +3,7 @@ import torch
 import torchmetrics
 import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
-from sim_clr.loss import contrastive_loss, NT_Xent
+from modules.loss import contrastive_loss, NT_Xent
 from models.voxel_convnext import VoxelConvNeXtCLR
 
 
@@ -48,14 +48,6 @@ class SimCLR(pl.LightningModule):
         loss = self._shared_step(batch, batch_idx)
         self.log('val_loss', loss, batch_size=self.batch_size, on_epoch=True, on_step=False)
         return loss
-
-    def test_step(self, batch, batch_idx):
-        loss = self._shared_step(batch, batch_idx)
-        self.log('test_accuracy', self.test_accuracy, prog_bar=self.gather_distributed)
-        return loss
-    
-    def on_test_epoch_end(self):
-        self.log('test_accuracy_epoch', self.test_accuracy.compute())
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)

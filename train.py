@@ -1,8 +1,8 @@
 import torch
 import pytorch_lightning as pl
-from sim_clr.dataset import CLRDataset, ThrowsDataset
-from sim_clr.network import SimCLR
-from single_particle_classifier.network_wrapper import SingleParticleModel
+from data.dataset import CLRDataset, ThrowsDataset
+from modules.simclr import SimCLR
+from modules.classifier import SingleParticleModel
 from torch.utils.data import random_split, DataLoader
 import os
 from pytorch_lightning.loggers import WandbLogger

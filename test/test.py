@@ -6,9 +6,9 @@ import torch
 import joblib
 
 from torch.utils import data
-from single_particle_classifier.network_wrapper import SingleParticleModel
-from sim_clr.network import SimCLR
-from sim_clr.dataset import ThrowsDataset
+from modules.classifier import SingleParticleModel
+from modules.simclr import SimCLR
+from data.dataset import ThrowsDataset
 from torch import nn
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from MinkowskiEngine.utils import batch_sparse_collate
@@ -33,10 +33,11 @@ def classifier_predict(loader, model):
         labels = torch.hstack(labels) 
     return preds.cpu().numpy(), labels.cpu().numpy()
 
-def sim_clr_predict(loader, sim_clr):
-    # these should not be hardcoded
-    sk_model = joblib.load('/global/homes/r/rradev/contrastive-neutrino/bdt_contrastive-model-augmentations-and-throws:v0_no_mlp.pkl')
-    scaler = joblib.load('/global/homes/r/rradev/contrastive-neutrino/scaler_contrastive-model-augmentations-and-throws:v0_no_mlp.pkl')
+def sim_clr_predict(loader, clr_collection):
+    sim_clr = clr_collection['network']
+    scaler = clr_collection['scaler']
+    sk_model = clr_collection['bdt']
+
     with torch.inference_mode():
         preds, labels = [], []
         for batch in loader:
@@ -47,7 +48,6 @@ def sim_clr_predict(loader, sim_clr):
             features = sim_clr(stensor).cpu().numpy()
             features = scaler.transform(features)
             labels.append(label)
-
             pred = sk_model.predict_proba(features)
             preds.append(pred)
 
@@ -55,42 +55,54 @@ def sim_clr_predict(loader, sim_clr):
         preds = np.vstack(preds)
     return preds, labels
 
-def latest_wandb_models(model_names=None):
-    """Returns a dictionary with the paths of the latest from
+def wandb_models(model_names=None):
+    """Returns a dictionary with the paths of models from
     the wandb registry"""
     if model_names is None:
         model_names = [
-            'contrastive-model-augmentations-and-throws',
+            'contrastive-model-augmentations-and-throws:v0',
+            'contrastive-augmentations:v1',
             # 'classifier-augmentations-throws'
             # 'classifier-nominal-only',
             # 'classifier-throws-dataset'
         ]
     print(f'Loading models: {model_names}')
     models = {
-        name: get_wandb_ckpt(f"rradev/model-registry/{name}:latest") for name in model_names
+        name: get_wandb_ckpt(f"rradev/model-registry/{name}") for name in model_names
     }
     return models
 
-def load_clr_model(ckpt_path):
+def load_clr_model(ckpt_path, name):
     clr = SimCLR.load_from_checkpoint(ckpt_path).cuda()
     network = clr.model
     network.mlp = nn.Identity() # Removing projection head g(.)
     network.eval()
     network.to(device)
-    return network
+
+    #load bdt and scaler 
+    features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
+    load_path = os.path.join(features_path, f"{name}.pkl")
+
+    if not os.path.exists(load_path):
+        raise Exception(f'Could not find {load_path}. You must run linear_eval.py first.')
+
+    bdt, scaler = joblib.load(load_path) 
+    return {
+        'network': network,
+        'bdt': bdt,
+        'scaler': scaler
+    }
 
 def load_models(model_names=None):
     # load all the models
-    models_paths = latest_wandb_models(model_names)
+    models_paths = wandb_models(model_names)
     model_names = list(models_paths.keys())
     models = {}
     for name in model_names:
         if 'classifier' in name:
-        # Action for the specific model
             models[name] = SingleParticleModel.load_from_checkpoint(models_paths[name]).cuda()
         else:
-        # Alternative action for other models
-            models[name] = load_clr_model(models_paths[name])
+            models[name] = load_clr_model(models_paths[name], name)
     return models
 
 def evaluate_models(models, throw_type):

@@ -2,10 +2,10 @@ import torch
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from MinkowskiEngine.utils import batch_sparse_collate
-from sim_clr.dataset import CLRDataset
+from data.dataset import CLRDataset
 import torchmetrics
 from MinkowskiEngine import SparseTensor
-from single_particle_classifier.network_wrapper import SingleParticleModel
+from modules.classifier import SingleParticleModel
 from tqdm import tqdm
 from utils.data import get_wandb_ckpt, load_yaml
 import numpy as np

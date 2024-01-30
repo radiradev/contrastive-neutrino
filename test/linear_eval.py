@@ -24,7 +24,7 @@ NUM_WORKERS = 12
 config = load_yaml('config/config.yaml')
 
 @torch.no_grad()
-def prepare_data_features(sim_clr, dataset, filename, features_path, drop_mlp=True):
+def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True):
     features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
     full_filename = os.path.join(features_path, filename)
 
@@ -79,7 +79,7 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
         A tuple containing the trained logistic regression model, balanced accuracy score, and accuracy score.
     """
     # clf = LogisticRegression(use_gpu=True, verbose=True)
-    clf = skLogisticRegression(verbose=True, solver='saga')
+    clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
     X = train_feats_simclr.tensors[0].numpy()
     y = train_feats_simclr.tensors[1].numpy()
 
@@ -91,7 +91,9 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
     X = scaler.fit_transform(X)
     clf.fit(X, y)
 
-    with open(f'{identifier}.pkl', 'wb') as f:
+    features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
+    dump_path = os.path.join(features_path, f"{identifier}.pkl") 
+    with open(dump_path, 'wb') as f:
         pickle.dump((clf, scaler), f)
 
     y_pred = clf.predict(scaler.transform(test_X))
