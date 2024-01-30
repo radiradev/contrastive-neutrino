@@ -2,7 +2,7 @@ import torch
 import pytorch_lightning as pl
 from data.dataset import CLRDataset, ThrowsDataset
 from modules.simclr import SimCLR
-from modules.classifier import SingleParticleModel
+from modules.classifier import Classifier
 from torch.utils.data import random_split, DataLoader
 import os
 from pytorch_lightning.loggers import WandbLogger
@@ -56,12 +56,12 @@ def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
         os.environ[variable] = tmp_dir
 
 
-def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model='SimCLR', wandb_checkpoint=None, gather_distributed=False, run_name=None):
-    if model == "SimCLR":
+def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model=None, wandb_checkpoint=None, gather_distributed=False, run_name=None):
+    if model == "sim_clr":
         model = SimCLR(batch_size, num_of_gpus, bool(gather_distributed))
 
-    elif model == "SingleParticle":
-        model = SingleParticleModel(batch_size)
+    elif model == "classifier":
+        model = Classifier(batch_size)
     else:
         raise ValueError("Model must be one of 'SimCLR' or 'SingleParticle'")
     

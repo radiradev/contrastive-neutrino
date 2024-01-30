@@ -6,8 +6,11 @@ import numpy as np
 import torchmetrics
 
 
-class SingleParticleModel(pl.LightningModule):
-    def __init__(self, batch_size=256):
+class Classifier(pl.LightningModule):
+    def __init__(self, batch_size=None):
+        if batch_size is None:
+            raise ValueError("batch_size must be specified")
+        
         super().__init__()
         self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=5)
         self.loss = torch.nn.CrossEntropyLoss()

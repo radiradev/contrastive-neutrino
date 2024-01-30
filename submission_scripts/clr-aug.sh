@@ -11,5 +11,5 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 train.py --batch_size 128 --num_of_gpus 1 --dataset_type augmentations --gather_distributed False \
+srun shifter python3 train.py --model sim_clr --batch_size 128 --num_of_gpus 1 --dataset_type augmentations --gather_distributed False \
  --wandb_checkpoint rradev/model-registry/contrastive-augmentations:latest

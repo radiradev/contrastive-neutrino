@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 train.py --run_name classifier-augmentations-throws --dataset_type single_particle_augmented --model SingleParticle
+srun shifter python3 train.py --model classifer --run_name classify-aug --dataset_type single_particle_augmented
