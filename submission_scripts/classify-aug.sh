@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 train.py --run_name classifier-augmentations-throws --dataset_type single_particle_augmented --model SingleParticle --wandb_checkpoint rradev/model-registry/classifier-augmentations-throws:v0
+srun shifter python3 train.py --run_name classifier-augmentations-throws --dataset_type single_particle_augmented --model SingleParticle

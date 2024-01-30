@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 -m single_particle_classifier.classifier_train --batch_size 256 --num_of_gpus 4 --dataset_type single_particle_augmented
+srun shifter python3 -m single_particle_classifier.classifier_train --batch_size 256 --num_of_gpus 4 --dataset_type single_particle
