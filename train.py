@@ -56,7 +56,7 @@ def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
         os.environ[variable] = tmp_dir
 
 
-def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model='SingleParticle', wandb_checkpoint=None, gather_distributed=False, run_name=None):
+def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model='SimCLR', wandb_checkpoint=None, gather_distributed=False, run_name=None):
     if model == "SimCLR":
         model = SimCLR(batch_size, num_of_gpus, bool(gather_distributed))
 
@@ -66,7 +66,7 @@ def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', m
         raise ValueError("Model must be one of 'SimCLR' or 'SingleParticle'")
     
     set_wandb_vars()
-    wandb_logger = WandbLogger(name=run_name, project='contrastive-neutrino', log_model='all')
+    wandb_logger = WandbLogger(name=run_name, project='contrastive-neutrino', log_model=True)
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
     
@@ -76,7 +76,7 @@ def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', m
         checkpoint = None
 
     # set val and test batches to 0.1 corresponds to num of nominal events, probably doesn't matter too much that we might go over the same ones multiple times
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=100, limit_train_batches=1.0, callbacks=[checkpoint_callback], logger=wandb_logger, log_every_n_steps=5)
+    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=400, limit_train_batches=1.0, callbacks=[checkpoint_callback], logger=wandb_logger, log_every_n_steps=5)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
 
 if __name__ == '__main__':

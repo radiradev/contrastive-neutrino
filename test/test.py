@@ -35,8 +35,8 @@ def classifier_predict(loader, model):
 
 def sim_clr_predict(loader, sim_clr):
     # these should not be hardcoded
-    sk_model = joblib.load('/global/homes/r/rradev/contrastive-neutrino/bdt_contrastive-model-augmentations-and-throws:v4_with_mlp.pkl')
-    scaler = joblib.load('/global/homes/r/rradev/contrastive-neutrino/scaler_contrastive-model-augmentations-and-throws:v4_with_mlp.pkl')
+    sk_model = joblib.load('/global/homes/r/rradev/contrastive-neutrino/bdt_contrastive-model-augmentations-and-throws:v0_no_mlp.pkl')
+    scaler = joblib.load('/global/homes/r/rradev/contrastive-neutrino/scaler_contrastive-model-augmentations-and-throws:v0_no_mlp.pkl')
     with torch.inference_mode():
         preds, labels = [], []
         for batch in loader:
@@ -61,6 +61,7 @@ def latest_wandb_models(model_names=None):
     if model_names is None:
         model_names = [
             'contrastive-model-augmentations-and-throws',
+            # 'classifier-augmentations-throws'
             # 'classifier-nominal-only',
             # 'classifier-throws-dataset'
         ]
@@ -73,7 +74,7 @@ def latest_wandb_models(model_names=None):
 def load_clr_model(ckpt_path):
     clr = SimCLR.load_from_checkpoint(ckpt_path).cuda()
     network = clr.model
-    #network.mlp = nn.Identity() # Removing projection head g(.)
+    network.mlp = nn.Identity() # Removing projection head g(.)
     network.eval()
     network.to(device)
     return network
@@ -121,6 +122,27 @@ if __name__ == '__main__':
     models = load_models()
     print('Models loaded', models.keys())
     results = {}
+    data_path = os.path.join(config['data']['nominal_data_path'], 'test')
+    dataset = ThrowsDataset(dataset_type='single_particle', root=data_path)
+    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True)    
+               
+    sample_size = 1792 # batch_size * 7 not all events present in the larnd data
+    results = {}
+    for model_name in models.keys():
+        if 'classifier' in model_name:
+            preds, labels = classifier_predict(loader, models[model_name])
+        else:
+            preds, labels = sim_clr_predict(loader, models[model_name])
+        print(labels.shape, preds.shape)
+        acc = accuracy_score(labels, preds.argmax(axis=1))
+        bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
+        print(f'{"Test data throws"}_{model_name} accuracy: {acc}')
+        print(f'{model_name} balanced accuracy: {bacc}')
+        results[model_name] = {
+            'preds': preds,
+            'labels': labels
+        }
+
     for throw in config['throws'].values():
         print(f'Processing {throw}')
         results[throw] = evaluate_models(models, throw)

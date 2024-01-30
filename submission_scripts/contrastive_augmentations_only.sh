@@ -11,4 +11,4 @@
 #SBATCH --gpu-bind=none
 
 export SLURM_CPU_BIND="cores"
-srun shifter python3 train.py --batch_size 128 --num_of_gpus 4 --dataset_type contrastive --gather_distributed False --wandb_checkpoint rradev/contrastive-neutrino/model-f464z3v5:v35
+srun shifter python3 train.py --batch_size 128 --num_of_gpus 1 --dataset_type augmentations --gather_distributed False --wandb_checkpoint rradev/contrastive-neutrino/model-6zc0y794:v35

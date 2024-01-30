@@ -1,17 +1,15 @@
 ## Large parts of this code are taken from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial17/SimCLR.html
 
 import os
-import pytorch_lightning as pl
 import torch
 
 from utils.data import load_yaml
 from torch.utils import data
 from tqdm import tqdm
-from sim_clr.network import SimCLR
-from sim_clr.dataset import ThrowsDataset
+from modules.simclr import SimCLR
+from data.dataset import ThrowsDataset
 from torch import nn
 from sklearn.utils import shuffle
-from snapml import LogisticRegression
 from sklearn.linear_model import LogisticRegression as skLogisticRegression
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from sklearn.preprocessing import StandardScaler
@@ -27,6 +25,7 @@ config = load_yaml('config/config.yaml')
 
 @torch.no_grad()
 def prepare_data_features(sim_clr, dataset, filename, features_path, drop_mlp=True):
+    features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
     full_filename = os.path.join(features_path, filename)
 
     if os.path.exists(full_filename):
@@ -38,7 +37,7 @@ def prepare_data_features(sim_clr, dataset, filename, features_path, drop_mlp=Tr
     # Prepare model
     network = sim_clr.model
     if drop_mlp:
-        network.mlp = nn.Identity()# Removing projection head g(.)
+        network.mlp = nn.Identity() # Removing projection head g(.)
     network.eval()
     network.to(device)
 
@@ -91,18 +90,14 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
     X, y = shuffle(X, y, random_state=42)  # Shuffling the data
     X = scaler.fit_transform(X)
     clf.fit(X, y)
-    filename = f'bdt_{identifier}.pkl'
-    with open(filename, 'wb') as f:
-        pickle.dump(clf, f)
-    
-    with open(f'scaler_{identifier}.pkl', 'wb') as f:
-        pickle.dump(scaler, f)
+
+    with open(f'{identifier}.pkl', 'wb') as f:
+        pickle.dump((clf, scaler), f)
+
     y_pred = clf.predict(scaler.transform(test_X))
     return clf, balanced_accuracy_score(test_y, y_pred), accuracy_score(test_y, y_pred)
 
-
-
-def evaluate(wandb_artifact=None, drop_mlp=True):
+def evaluate(wandb_artifact=None):
     dataset_type = 'single_particle'
     train_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'))
     test_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'test'))
@@ -112,15 +107,15 @@ def evaluate(wandb_artifact=None, drop_mlp=True):
         simclr_model = SimCLR()
         artifact_name = 'randomly_initialized'
     else:
-        ckpt_path, artifact_name = get_wandb_ckpt(wandb_artifact ,return_name=True)
+        ckpt_path, artifact_name = get_wandb_ckpt(wandb_artifact,return_name=True)
         simclr_model = SimCLR.load_from_checkpoint(ckpt_path)
 
 
-    identifier = f'{artifact_name}_no_mlp' if drop_mlp else f'{artifact_name}_with_mlp'
+    identifier = f'{artifact_name}'
     print(f'Evaluating {identifier}')
 
-    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{identifier}_train_feats_simclr.pt', features_path=os.environ['PSCRATCH'], drop_mlp=drop_mlp)
-    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{identifier}_test_feats_simclr.pt', features_path=os.environ['PSCRATCH'], drop_mlp=drop_mlp)
+    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{identifier}_train_feats.pt')
+    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{identifier}_test_feats.pt')
 
     clf, balanced_acc, acc_score = train_linear_model(train_feats_simclr, test_feats_simclr, identifier=identifier)
     print(f'Balanced accuracy score: {balanced_acc}')
