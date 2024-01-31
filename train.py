@@ -33,7 +33,7 @@ def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=
 
     collate_fn = batch_sparse_collate if dataset_type == 'single_particle' or dataset_type=='single_particle_augmented' else clr_sparse_collate
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
     return train_loader, val_dataloader
 
 # callbacks
@@ -63,7 +63,7 @@ def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', m
     elif model == "classifier":
         model = Classifier(batch_size)
     else:
-        raise ValueError("Model must be one of 'SimCLR' or 'SingleParticle'")
+        raise ValueError("Model sim_clr or classfier")
     
     set_wandb_vars()
     wandb_logger = WandbLogger(name=run_name, project='contrastive-neutrino', log_model=True)

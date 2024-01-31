@@ -58,7 +58,7 @@ class Classifier(pl.LightningModule):
         loss, predictions, labels = self._shared_step(batch, batch_idx)
         
         #update metrics
-        self.train_loss = loss
+        self.train_loss(loss)
         self.train_acc(predictions, labels)
 
         #log metrics
