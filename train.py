@@ -29,7 +29,7 @@ def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=
     if dataset_type != 'contrastive':
         val_data_path = config['data']['nominal_data_path']
 
-    val_dataset = ThrowsDataset(dataset_type, os.path.join(val_data_path, 'val'))
+    val_dataset = ThrowsDataset(dataset_type, os.path.join(val_data_path, 'val'), train_mode=False)
 
     collate_fn = batch_sparse_collate if dataset_type == 'single_particle' or dataset_type=='single_particle_augmented' else clr_sparse_collate
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
@@ -39,7 +39,7 @@ def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=
 # callbacks
 checkpoint_callback = pl.callbacks.ModelCheckpoint(
     dirpath=config['checkpoint_dirpath'],
-    monitor='val_loss',
+    monitor='val/loss',
     filename='model-{epoch:02d}-{val_loss:.2f}',
     save_top_k=2,
     mode='min',
@@ -63,10 +63,10 @@ def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', m
     elif model == "classifier":
         model = Classifier(batch_size)
     else:
-        raise ValueError("Model sim_clr or classfier")
+        raise ValueError("Model sim_clr or classifier")
     
     set_wandb_vars()
-    wandb_logger = WandbLogger(name=run_name, project='contrastive-neutrino', log_model=True)
+    wandb_logger = WandbLogger(name=run_name, project='contrastive-neutrino', log_model='all')
     data_path = config['data']['data_path']
     train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
     

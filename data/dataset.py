@@ -31,13 +31,14 @@ def identity(coords, feats):
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     quantization_size = 0.38
     
-    def __init__(self, dataset_type, root, extensions='.npz'):
+    def __init__(self, dataset_type, root, extensions='.npz',train_mode=True):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
         assert dataset_type in ['single_particle', 'contrastive', 'augmentations', 'single_particle_augmented'], f"Unknown dataset type {dataset_type}"
         # Create the cache
         if dataset_type == 'contrastive':
             self.create_path_cache()
+        self.train_mode = train_mode
 
     def loader(self, path):
         return np.load(path)
@@ -114,9 +115,13 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         elif self.dataset_type == 'single_particle_augmented':
             path, label = self.samples[index]
             sample = self.loader(path)
+            
             coords, feats = sample['coordinates'], sample['adc']
             coords, feats = torch.tensor(coords), torch.tensor(np.expand_dims(feats, axis=1), dtype=torch.float32)
-            coords, feats = self.augment_single(coords, feats)
+            
+            if self.train_mode:
+                coords, feats = self.augment_single(coords, feats)
+            
             coords, feats = sparse_quantize(coords, feats, quantization_size=self.quantization_size)
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
         
@@ -247,6 +252,6 @@ if __name__ == '__main__':
     xi, xj = dataset[0]
     print(xi[0].shape, xj[0].shape)
 
-    dataset_larnd = ThrowsDataset(dataset_type='single_particle', root='/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles/larndsim_throws_converted')
+    dataset_larnd = ThrowsDataset(dataset_type='single_particle_augmented', root='/pscratch/sd/r/rradev/larndsim_throws_converted_new/val')
     coords, feats, label = dataset_larnd[0]
     print(coords.shape, feats.shape, label.shape)

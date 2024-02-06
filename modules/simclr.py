@@ -10,7 +10,8 @@ from models.voxel_convnext import VoxelConvNeXtCLR
 class SimCLR(pl.LightningModule):
     def __init__(self, batch_size=None, num_gpus=1, gather_distributed=True):
         if batch_size is None:
-            raise ValueError("batch_size must be specified")
+            batch_size = None
+            #raise ValueError("batch_size must be specified")
         
         super().__init__()
         self.model = VoxelConvNeXtCLR(in_chans=1, D=3)

@@ -6,7 +6,7 @@ import torch
 import joblib
 
 from torch.utils import data
-from modules.classifier import SingleParticleModel
+from modules.classifier import Classifier
 from modules.simclr import SimCLR
 from data.dataset import ThrowsDataset
 from torch import nn
@@ -61,14 +61,14 @@ def wandb_models(model_names=None):
     if model_names is None:
         model_names = [
             'contrastive-model-augmentations-and-throws:v0',
-            'contrastive-augmentations:v1',
+            # 'contrastive-augmentations:v1',
             # 'classifier-augmentations-throws'
-            # 'classifier-nominal-only',
-            # 'classifier-throws-dataset'
+            'classifier-augmentations:v0',
+            'classifier-nominal-only:v0'
         ]
     print(f'Loading models: {model_names}')
     models = {
-        name: get_wandb_ckpt(f"rradev/model-registry/{name}") for name in model_names
+        name: get_wandb_ckpt(f"rradev/model-registry/{name}") for name in model_names 
     }
     return models
 
@@ -99,8 +99,8 @@ def load_models(model_names=None):
     model_names = list(models_paths.keys())
     models = {}
     for name in model_names:
-        if 'classifier' in name:
-            models[name] = SingleParticleModel.load_from_checkpoint(models_paths[name]).cuda()
+        if 'classifier' in name or DUMB_FLAG:
+            models[name] = Classifier.load_from_checkpoint(models_paths[name]).cuda()
         else:
             models[name] = load_clr_model(models_paths[name], name)
     return models
@@ -114,7 +114,7 @@ def evaluate_models(models, throw_type):
     sample_size = 1792 # batch_size * 7 not all events present in the larnd data
     results = {}
     for model_name in models.keys():
-        if 'classifier' in model_name:
+        if 'classifier' in model_name or DUMB_FLAG:
             preds, labels = classifier_predict(loader, models[model_name])
         else:
             preds, labels = sim_clr_predict(loader, models[model_name])
@@ -131,29 +131,30 @@ def evaluate_models(models, throw_type):
     
 
 if __name__ == '__main__':
+    DUMB_FLAG = False
     models = load_models()
     print('Models loaded', models.keys())
     results = {}
     data_path = os.path.join(config['data']['nominal_data_path'], 'test')
     dataset = ThrowsDataset(dataset_type='single_particle', root=data_path)
-    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True)    
-               
-    sample_size = 1792 # batch_size * 7 not all events present in the larnd data
+    loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=False)    
+
     results = {}
-    for model_name in models.keys():
-        if 'classifier' in model_name:
-            preds, labels = classifier_predict(loader, models[model_name])
-        else:
-            preds, labels = sim_clr_predict(loader, models[model_name])
-        print(labels.shape, preds.shape)
-        acc = accuracy_score(labels, preds.argmax(axis=1))
-        bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
-        print(f'{"Test data throws"}_{model_name} accuracy: {acc}')
-        print(f'{model_name} balanced accuracy: {bacc}')
-        results[model_name] = {
-            'preds': preds,
-            'labels': labels
-        }
+    # for model_name in models.keys():
+    #     if 'classifier' in model_name or DUMB_FLAG:
+    #         preds, labels = classifier_predict(loader, models[model_name])
+    #     else:
+    #         preds, labels = sim_clr_predict(loader, models[model_name])
+    #     print(labels.shape, preds.shape)
+    #     acc = accuracy_score(labels, preds.argmax(axis=1))
+    #     bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
+    #     print(f'{"Test data throws"}_{model_name} accuracy: {acc}')
+    #     print(f'{model_name} balanced accuracy: {bacc}')
+    #     results[model_name] = {
+    #         'preds': preds,
+    #         'labels': labels
+    #     }
+    #     exit()
 
     for throw in config['throws'].values():
         print(f'Processing {throw}')
