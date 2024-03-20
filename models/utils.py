@@ -13,6 +13,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from MinkowskiEngine import SparseTensor
 
+class MinkowskiIdentity(nn.Module):
+    """ Identity layer for sparse tensors.
+    """
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        return x
+
 class MinkowskiGRN(nn.Module):
     """ GRN layer for sparse tensors.
     """

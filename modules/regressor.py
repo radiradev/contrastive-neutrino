@@ -1,24 +1,24 @@
 import torch
-from models.voxel_convnext import VoxelConvNeXtClassifier
+from models.voxel_convnext import VoxelConvNeXtRegressor
 import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
 import numpy as np
 import torchmetrics
 
 
-class Classifier(pl.LightningModule):
-    def __init__(self, batch_size=None, device='cuda', num_classes=5):
+class Regressor(pl.LightningModule):
+    def __init__(self, batch_size=None, device='cuda'):
         if batch_size is None:
             batch_size = 256
             # raise ValueError("batch_size must be specified")
         
         super().__init__()
-        self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=num_classes).to(device)
-        self.loss = torch.nn.CrossEntropyLoss()
+        self.model = VoxelConvNeXtRegressor(in_chans=1, D=3, num_classes=1).to(device)
+        self.loss = torch.nn.L1Loss()
 
         #metrics
-        self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=5)
-        self.val_acc = torchmetrics.Accuracy(task='multiclass', num_classes=5)
+        self.train_r2 = torchmetrics.R2Score()
+        self.val_r2 = torchmetrics.R2Score()
 
         #losses
         self.train_loss = torchmetrics.MeanMetric()
@@ -39,6 +39,7 @@ class Classifier(pl.LightningModule):
 
     def _shared_step(self, batch, batch_idx):
         coordinates, energy, labels = batch
+        labels = labels.unsqueeze(1)
         stensor = SparseTensor(
             features=energy.float(),
             coordinates=coordinates,
@@ -60,11 +61,11 @@ class Classifier(pl.LightningModule):
         
         #update metrics
         self.train_loss(loss)
-        self.train_acc(predictions, labels)
+        self.train_r2(predictions, labels)
 
         #log metrics
         self.log('train/loss', self.train_loss, prog_bar=True, on_step=True, on_epoch=True, batch_size=self.batch_size)
-        self.log('train/acc', self.train_acc, prog_bar=True, on_step=True, on_epoch=True, batch_size=self.batch_size)
+        self.log('train/acc', self.train_r2, prog_bar=True, on_step=True, on_epoch=True, batch_size=self.batch_size)
 
         return loss
     
@@ -73,11 +74,11 @@ class Classifier(pl.LightningModule):
 
         #update metrics
         self.val_loss(loss)
-        self.val_acc(predictions, labels)
+        self.val_r2(predictions, labels)
 
         #log metrics
         self.log('val/loss', self.val_loss, on_step=False, on_epoch=True, batch_size=self.batch_size)
-        self.log('val/acc', self.val_acc, on_step=False, on_epoch=True, batch_size=self.batch_size)
+        self.log('val/acc', self.val_r2, on_step=False, on_epoch=True, batch_size=self.batch_size)
         return loss
 
     def on_validation_epoch_end(self) -> None:
