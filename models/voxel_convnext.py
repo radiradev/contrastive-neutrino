@@ -127,7 +127,7 @@ class VoxelConvNeXt(nn.Module):
 
 class VoxelConvNeXtRegressor(VoxelConvNeXt):
    def __init__(self, num_classes, pooling='max', *args, **kwargs):
-       super().__init__(*args, grn=True, **kwargs)
+       super().__init__(*args, grn=False, **kwargs)
        pool_layer = MinkowskiGlobalMaxPooling() if pooling == 'max' else MinkowskiGlobalAvgPooling()
        self.head = nn.Sequential(
            pool_layer,
