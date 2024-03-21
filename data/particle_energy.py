@@ -2,12 +2,10 @@ from tqdm import tqdm
 import uproot
 import numpy as np
 import pickle
+import h5py
 import os
 from multiprocessing import Pool, Manager
 from functools import partial
-
-restored_edeps_directory = '/global/cfs/cdirs/dune/users/rradev/contrastive/restored_individual_particles/individual_particles/'
-larnd_directory = '/pscratch/sd/r/rradev/larndsim_throws_converted_nominal'
 
 def get_npz_files(phase, particle):
     return sorted(os.listdir(f'{larnd_directory}/{phase}/{particle}'))
@@ -16,7 +14,7 @@ def get_npz_files(phase, particle):
 def get_edep_file(npz_file):
     npz_file = os.path.basename(npz_file).split('_')[:4]
     npz_file = '_'.join(npz_file)
-    return os.path.join(restored_edeps_directory, npz_file + '.root')
+    return os.path.join(edeps_directory, npz_file + '.root')
 
 def load_npz_file(filename, phase, particle):
     return np.load(os.path.join(larnd_directory, phase, particle, filename))
@@ -37,6 +35,20 @@ def extract_vertex(filename, event_id):
     x, y, z = vertex['fX'], vertex['fY'], vertex['fZ']
     return np.array([x, y, z])
 
+def get_h5py_file(npz_file):
+    npz_file = os.path.basename(npz_file).split('_')[:4]
+    npz_file = '_'.join(npz_file)
+    return os.path.join(edeps_directory, npz_file + '.h5')
+
+def get_energy_deposits(npz_file, event_id):
+    h5py_file = get_h5py_file(npz_file)
+    f = h5py.File(h5py_file, 'r')
+    mask = f['segments']['eventID'] == event_id
+    dE = f['segments']['dE'][mask]
+    f.close()
+    return dE
+    
+
 def energy_vertex(npz_file, phase, particle):
     # find the corresponding edep file
     # grab the event id from the npz file
@@ -51,11 +63,17 @@ def energy_vertex(npz_file, phase, particle):
     energy = extract_energy(edep_file, int(event_id))
     # get the vertex
     vertex = extract_vertex(edep_file, int(event_id))
+    
+    
+    edeps = get_energy_deposits(npz_file, int(event_id))
 
     # check the vertex is matching
     npz = load_npz_file(npz_file, phase, particle)
     assert np.allclose(vertex, npz['vertex'] * 10), f' Vertices did not match {vertex} {npz["vertex"]}'
-    particle_energy[npz_file] = energy
+    particle_energy[npz_file] = {
+        "energy": energy,
+        "summed_deps": np.sum(edeps)
+    }
 
 def process_npz_files(phase, particles):
     def process_particle(particle):
@@ -68,11 +86,17 @@ def process_npz_files(phase, particles):
     for particle in particles:
         process_particle(particle)
 
+edeps_directory = '/global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/edeps/'
+larnd_directory = '/global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/larndsim_converted/'
 
 particle_energy = Manager().dict()
 
-for phase in ['train', 'test', 'val']:
+phases = [
+    'all_nominal'
+]
+
+for phase in phases:
     process_npz_files(phase, ['pion', 'proton', 'gamma', 'electron', 'muon'])
 
-with open('particle_energy.pkl', 'wb') as f:
+with open('particle_energy_throws.pkl', 'wb') as f:
     pickle.dump(dict(particle_energy), f)

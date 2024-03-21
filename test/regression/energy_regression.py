@@ -1,4 +1,4 @@
-## Large parts of this code are taken from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial17/SimCLR.html
+## Some parts are taken from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial17/SimCLR.html
 
 import os
 import torch
@@ -7,16 +7,22 @@ from utils.data import load_yaml
 from torch.utils import data
 from tqdm import tqdm
 from modules.simclr import SimCLR
-from data.dataset import ThrowsDataset
+from data.regression import Regression
 from torch import nn
 from sklearn.utils import shuffle
-from sklearn.linear_model import LogisticRegression as skLogisticRegression
-from sklearn.metrics import balanced_accuracy_score, accuracy_score
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import HistGradientBoostingRegressor
+
+from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler
 from MinkowskiEngine.utils import batch_sparse_collate
 from MinkowskiEngine import SparseTensor
 from utils.data import get_wandb_ckpt
 import pickle
+# train test split
+from torch.utils.data import random_split
+
+
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -79,7 +85,8 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
         A tuple containing the trained logistic regression model, balanced accuracy score, and accuracy score.
     """
     # clf = LogisticRegression(use_gpu=True, verbose=True)
-    clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
+    clf = HistGradientBoostingRegressor(loss='squared_error')
+    # clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
     X = train_feats_simclr.tensors[0].numpy()
     y = train_feats_simclr.tensors[1].numpy()
 
@@ -92,17 +99,32 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
     clf.fit(X, y)
 
     features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
-    dump_path = os.path.join(features_path, f"{identifier}.pkl") 
+    dump_path = os.path.join(features_path, f"{identifier}_regression.pkl") 
     with open(dump_path, 'wb') as f:
         pickle.dump((clf, scaler), f)
 
     y_pred = clf.predict(scaler.transform(test_X))
-    return clf, balanced_accuracy_score(test_y, y_pred), accuracy_score(test_y, y_pred)
+    # plot predictions vs true values
+    import matplotlib.pyplot as plt
+    plt.scatter(test_y, y_pred, alpha=0.1)
+    plt.xlabel('True Values')
+    plt.ylabel('Predictions')
+    plt.axis('equal')
+    plt.savefig(f'{identifier}_regression.png')
+    # plot error
 
-def evaluate(wandb_artifact=None):
-    dataset_type = 'single_particle'
-    train_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'))
-    test_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'test'))
+    plt.clf()
+    plt.hist(test_y - y_pred, bins=30)
+    plt.xlabel('Prediction Error')
+    plt.ylabel('Count')
+    plt.savefig(f'{identifier}_regression_error.png')
+
+    return clf, mean_absolute_error(test_y, y_pred), r2_score(test_y, y_pred)
+
+def evaluate(wandb_artifact=None, reset_features=False):
+    dataset = Regression(root=os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'), energies='particle_energy_train.pkl')
+    # TODO Investigate why throw number is present in 2k particles filename
+    train_dataset, test_dataset = random_split(dataset, [int(len(dataset)*0.90), len(dataset)-int(len(dataset)*0.90)])
 
     if wandb_artifact is None:
         print('Using a randomly initialized model as baseline')
@@ -115,13 +137,20 @@ def evaluate(wandb_artifact=None):
 
     identifier = f'{artifact_name}'
     print(f'Evaluating {identifier}')
+    
+    if reset_features:
+        print('Resetting features')
+        path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
+        os.system(f'rm {path}/{identifier}_regression_train.pt')
+        os.system(f'rm {path}/{identifier}_regression_test.pt')
 
-    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{identifier}_train_feats.pt')
-    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{identifier}_test_feats.pt')
+    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{identifier}_regression_train.pt')
+    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{identifier}_regression_test.pt')
 
-    clf, balanced_acc, acc_score = train_linear_model(train_feats_simclr, test_feats_simclr, identifier=identifier)
-    print(f'Balanced accuracy score: {balanced_acc}')
-    print(f'Accuracy score: {acc_score}')
+    clf, mse, r2 = train_linear_model(train_feats_simclr, test_feats_simclr, identifier=identifier)
+
+    print(f'MAE: {mse}')
+    print(f'R^2: {r2}')
 
 if __name__ == '__main__':
     import fire

@@ -4,13 +4,14 @@ import os
 import pytorch_lightning as pl
 import torch
 import joblib
+import datetime
 
 from torch.utils import data
-from modules.classifier import Classifier
+from modules.regressor import Regressor
 from modules.simclr import SimCLR
-from data.dataset import ThrowsDataset
+from data.regression import Regression
 from torch import nn
-from sklearn.metrics import balanced_accuracy_score, accuracy_score
+from sklearn.metrics import r2_score, mean_absolute_error
 from MinkowskiEngine.utils import batch_sparse_collate
 from MinkowskiEngine import SparseTensor
 from utils.data import get_wandb_ckpt, load_yaml
@@ -21,7 +22,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 NUM_WORKERS = 12 
 config = load_yaml('config/config.yaml')
 
-def classifier_predict(loader, model):
+def regressor_predict(loader, model):
     preds, labels = [], []
     with torch.inference_mode():
         for batch in loader:
@@ -29,7 +30,7 @@ def classifier_predict(loader, model):
             preds.append(pred)
             labels.append(label)
         
-        preds = torch.vstack(preds)
+        preds = torch.hstack(preds)
         labels = torch.hstack(labels) 
     return preds.cpu().numpy(), labels.cpu().numpy()
 
@@ -48,11 +49,11 @@ def sim_clr_predict(loader, clr_collection):
             features = sim_clr(stensor).cpu().numpy()
             features = scaler.transform(features)
             labels.append(label)
-            pred = sk_model.predict_proba(features)
+            pred = sk_model.predict(features)
             preds.append(pred)
 
         labels = np.hstack(labels)
-        preds = np.vstack(preds)
+        preds = np.hstack(preds)
     return preds, labels
 
 def wandb_models(model_names=None):
@@ -60,11 +61,9 @@ def wandb_models(model_names=None):
     the wandb registry"""
     if model_names is None:
         model_names = [
-            'contrastive-model-augmentations-and-throws:v0',
-            # 'contrastive-augmentations:v1',
-            # 'classifier-augmentations-throws'
-            'classifier-augmentations:v0',
-            'classifier-nominal-only:v0'
+            'contrastive-model-augmentations-and-throws:v1',
+            'contrastive-augmentations:v3',
+            'regressor-energy:v0',
         ]
     print(f'Loading models: {model_names}')
     models = {
@@ -81,12 +80,13 @@ def load_clr_model(ckpt_path, name):
 
     #load bdt and scaler 
     features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
-    load_path = os.path.join(features_path, f"{name}.pkl")
+    load_path = os.path.join(features_path, f"{name}_regression.pkl")
 
     if not os.path.exists(load_path):
         raise Exception(f'Could not find {load_path}. You must run linear_eval.py first.')
 
     bdt, scaler = joblib.load(load_path) 
+    print(f'loaded model for {name} from {load_path}')
     return {
         'network': network,
         'bdt': bdt,
@@ -99,30 +99,29 @@ def load_models(model_names=None):
     model_names = list(models_paths.keys())
     models = {}
     for name in model_names:
-        if 'classifier' in name or DUMB_FLAG:
-            models[name] = Classifier.load_from_checkpoint(models_paths[name]).cuda()
+        if 'regressor' in name:
+            models[name] = Regressor.load_from_checkpoint(models_paths[name], strict=False).cuda()
         else:
             models[name] = load_clr_model(models_paths[name], name)
     return models
 
 def evaluate_models(models, throw_type):
 
-    data_path = os.path.join(config['data']['2k_particles'],'larndsim_converted', throw_type)
-    dataset = ThrowsDataset(dataset_type='single_particle', root=data_path)
-    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True)    
-               
-    sample_size = 1792 # batch_size * 7 not all events present in the larnd data
+    data_path = os.path.join(config['data']['throws'],'larndsim_converted', throw_type)
+    dataset = Regression(root=data_path, energies='particle_energy_throws.pkl')
+    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)    
+    
     results = {}
     for model_name in models.keys():
-        if 'classifier' in model_name or DUMB_FLAG:
-            preds, labels = classifier_predict(loader, models[model_name])
+        if 'regressor' in model_name:
+            preds, labels = regressor_predict(loader, models[model_name])
         else:
             preds, labels = sim_clr_predict(loader, models[model_name])
         print(labels.shape, preds.shape)
-        acc = accuracy_score(labels, preds.argmax(axis=1))
-        bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
-        print(f'{throw_type}_{model_name} accuracy: {acc}')
-        print(f'{model_name} balanced accuracy: {bacc}')
+        r2 = r2_score(labels, preds)
+        mae = mean_absolute_error(labels, preds)
+        print(f'{throw_type}_{model_name} R2 score: {r2}')
+        print(f'{model_name} Mean Absolute Error: {mae}')
         results[model_name] = {
             'preds': preds,
             'labels': labels
@@ -131,35 +130,16 @@ def evaluate_models(models, throw_type):
     
 
 if __name__ == '__main__':
-    DUMB_FLAG = False
     models = load_models()
-    print('Models loaded', models.keys())
+    print('Models loaded', models.keys()) 
     results = {}
-    data_path = os.path.join(config['data']['nominal_data_path'], 'test')
-    dataset = ThrowsDataset(dataset_type='single_particle', root=data_path)
-    loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=False)    
-
-    results = {}
-    # for model_name in models.keys():
-    #     if 'classifier' in model_name or DUMB_FLAG:
-    #         preds, labels = classifier_predict(loader, models[model_name])
-    #     else:
-    #         preds, labels = sim_clr_predict(loader, models[model_name])
-    #     print(labels.shape, preds.shape)
-    #     acc = accuracy_score(labels, preds.argmax(axis=1))
-    #     bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
-    #     print(f'{"Test data throws"}_{model_name} accuracy: {acc}')
-    #     print(f'{model_name} balanced accuracy: {bacc}')
-    #     results[model_name] = {
-    #         'preds': preds,
-    #         'labels': labels
-    #     }
-    #     exit()
-
     for throw in config['throws'].values():
         print(f'Processing {throw}')
         results[throw] = evaluate_models(models, throw)
-    joblib.dump(results, 'results_mlp.pkl')
+    
+    # get current date
+    date = datetime.datetime.now().strftime("%Y-%m-%d")
+    joblib.dump(results, f'/global/homes/r/rradev/contrastive-neutrino/test/regression/results/results_{date}.pkl')
     
 
 

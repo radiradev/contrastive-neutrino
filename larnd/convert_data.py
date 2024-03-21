@@ -11,7 +11,6 @@ import os
 
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
-common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/')
 run_config, geom_dict = util.detector_configuration(detector)  
 
 
@@ -21,7 +20,7 @@ def pdg_to_name(pdg):
     return pdg_map[pdg]
 
 
-def read_file(filename, num_expected_events=100):
+def read_file(filename):
     f = h5py.File(filename, 'r')
     #if unable to read file, skip
     packets = f['packets'] # readout
@@ -74,7 +73,7 @@ def find_parent_particle(trajectories, event_id):
     return pdg_to_name(int(parent_particle['pdgId']))
 
         
-def save_event(event_id, i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config):
+def save_event(event_id, i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config, for_training):
     pckt_mask = pckt_event_ids == event_id
     packets_ev = packets[pckt_mask]
     t0 = t0_grp[i_event]
@@ -112,11 +111,11 @@ def save_event(event_id, i_event, filename, packets, pckt_event_ids, vertices, t
         )
 
 
-def process_file(filename):
+def process_file(filename, for_training=False):
     try:
         packets, pckt_event_ids, t0_grp, event_ids, vertices = read_file(filename)
         for i_event, event_id in enumerate(event_ids):
-            save_event(event_id,i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config)
+            save_event(event_id,i_event, filename, packets, pckt_event_ids, vertices, t0_grp, geom_dict, run_config, for_training)
     except ValueError as e:
         print(f'Error in file {filename}: {e}')
     except KeyError as e:
@@ -124,31 +123,15 @@ def process_file(filename):
 
 
 if __name__ == '__main__':
-    throws = {
-        "throw1": 'all_pos_max',
-        "throw2": 'all_pos_min',
-        "throw3": 'efield_pos_max',
-        "throw4": 'transdiff_pos_max',
-        "throw5": 'lifetime_pos_max',
-        "throw6": 'efield_neg_max',
-        "throw7": 'transdiff_neg_max',
-        "throw8": 'lifetime_neg_max',
-        "throw9":  'all_0.25_pos_max',
-        "throw10": 'all_0.25_neg_max',
-        "throw11": 'all_0.50_pos_max',
-        "throw12": 'all_0.50_neg_max',
-        "throw13": 'all_0.75_pos_max',
-        "throw14": 'all_0.75_neg_max',
-        "throw15": 'all_nominal',
-        # "throw16": 'all_3xpos_max', coming soon (tm)
-        "throw17": 'all_3xneg_max',
-    }
+    common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/electronics_throws')
+    throws = [f'throw{i}' for i in range(1, 11)] 
+    throws = throws + ['nominal']
 
-    for throw_number in throws.keys():        
+    for throw_number in throws:        
         print(f'Processing {throw_number}')
         larnd_path = Path(common / 'larndsim')
 
-        output_path = os.path.join(common, 'larndsim_converted', throws[throw_number])
+        output_path = os.path.join(common, 'larndsim_converted', throw_number)
         if not os.path.exists(output_path):
             os.makedirs(output_path)
 

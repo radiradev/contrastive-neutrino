@@ -1,8 +1,0 @@
-{
-    "files.exclude": {
-        "temp/": true,
-        "*.log": true,
-        "**/.ipynb_checkpoints": true,
-        "**/__pycache__": true
-    }
-}
