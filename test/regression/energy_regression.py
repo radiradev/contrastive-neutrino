@@ -18,9 +18,9 @@ from sklearn.preprocessing import StandardScaler
 from MinkowskiEngine.utils import batch_sparse_collate
 from MinkowskiEngine import SparseTensor
 from utils.data import get_wandb_ckpt
-import pickle
 # train test split
 from torch.utils.data import random_split
+import joblib
 
 
 
@@ -30,7 +30,7 @@ NUM_WORKERS = 12
 config = load_yaml('config/config.yaml')
 
 @torch.no_grad()
-def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True):
+def prepare_data_features(network, dataset, filename):
     features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
     full_filename = os.path.join(features_path, filename)
 
@@ -40,15 +40,9 @@ def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True):
         feats, labels = torch.load(full_filename)
         return data.TensorDataset(feats, labels)
     
-    # Prepare model
-    network = sim_clr.model
-    if drop_mlp:
-        network.mlp = nn.Identity() # Removing projection head g(.)
-    network.eval()
-    network.to(device)
 
     # Encode all images
-    data_loader = data.DataLoader(dataset, batch_size=512, num_workers=NUM_WORKERS, shuffle=False, drop_last=False, collate_fn=batch_sparse_collate)
+    data_loader = data.DataLoader(dataset, batch_size=512, num_workers=NUM_WORKERS, shuffle=True, drop_last=False, collate_fn=batch_sparse_collate)
     feats, labels = [], []
     with torch.inference_mode():
         for batch_coords, batch_feats, batch_labels in tqdm(data_loader):
@@ -73,6 +67,38 @@ def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True):
 
     return data.TensorDataset(feats, labels)
 
+
+def load_clr_model(wandb_artifact, return_name=False):    
+    if wandb_artifact is not None:
+        print(f'Loading model from wandb artifact: {wandb_artifact}')
+        ckpt_path, artifact_name = get_wandb_ckpt(wandb_artifact,return_name=True)
+        sim_clr = SimCLR.load_from_checkpoint(ckpt_path)
+    else:
+        sim_clr = SimCLR()
+        artifact_name = 'random_weights'
+    
+    network = sim_clr.model
+    network.mlp = nn.Identity() # Removing projection head g(.)
+    network.eval()
+    network.to(device)
+
+    if return_name:
+        return network, artifact_name
+    
+    return network
+
+
+def save_pipeline(scaler, bdt, identifier):
+    pipeline = {
+        'scaler': scaler,
+        'bdt': bdt
+    }
+    features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
+    save_path = os.path.join(features_path, f"{identifier}_pipeline.pkl")
+    joblib.dump(pipeline, save_path)
+    print(f"Pipeline saved to {save_path}")
+
+
 def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
     """
     Trains a logistic regression model on the given training features and evaluates it on the given test features.
@@ -85,7 +111,7 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
         A tuple containing the trained logistic regression model, balanced accuracy score, and accuracy score.
     """
     # clf = LogisticRegression(use_gpu=True, verbose=True)
-    clf = HistGradientBoostingRegressor(loss='squared_error')
+    clf = HistGradientBoostingRegressor(loss='absolute_error')
     # clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
     X = train_feats_simclr.tensors[0].numpy()
     y = train_feats_simclr.tensors[1].numpy()
@@ -98,42 +124,19 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
     X = scaler.fit_transform(X)
     clf.fit(X, y)
 
-    features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
-    dump_path = os.path.join(features_path, f"{identifier}_regression.pkl") 
-    with open(dump_path, 'wb') as f:
-        pickle.dump((clf, scaler), f)
+    # Save pipeline
+    save_pipeline(scaler, clf, identifier)
 
     y_pred = clf.predict(scaler.transform(test_X))
-    # plot predictions vs true values
-    import matplotlib.pyplot as plt
-    plt.scatter(test_y, y_pred, alpha=0.1)
-    plt.xlabel('True Values')
-    plt.ylabel('Predictions')
-    plt.axis('equal')
-    plt.savefig(f'{identifier}_regression.png')
-    # plot error
-
-    plt.clf()
-    plt.hist(test_y - y_pred, bins=30)
-    plt.xlabel('Prediction Error')
-    plt.ylabel('Count')
-    plt.savefig(f'{identifier}_regression_error.png')
-
     return clf, mean_absolute_error(test_y, y_pred), r2_score(test_y, y_pred)
 
-def evaluate(wandb_artifact=None, reset_features=False):
+def evaluate(wandb_artifact=None, reset_features=True):
     dataset = Regression(root=os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'), energies='particle_energy_train.pkl')
     # TODO Investigate why throw number is present in 2k particles filename
     train_dataset, test_dataset = random_split(dataset, [int(len(dataset)*0.90), len(dataset)-int(len(dataset)*0.90)])
+    
 
-    if wandb_artifact is None:
-        print('Using a randomly initialized model as baseline')
-        simclr_model = SimCLR()
-        artifact_name = 'randomly_initialized'
-    else:
-        ckpt_path, artifact_name = get_wandb_ckpt(wandb_artifact,return_name=True)
-        simclr_model = SimCLR.load_from_checkpoint(ckpt_path)
-
+    clr_model, artifact_name = load_clr_model(wandb_artifact, return_name=True)
 
     identifier = f'{artifact_name}'
     print(f'Evaluating {identifier}')
@@ -144,8 +147,8 @@ def evaluate(wandb_artifact=None, reset_features=False):
         os.system(f'rm {path}/{identifier}_regression_train.pt')
         os.system(f'rm {path}/{identifier}_regression_test.pt')
 
-    train_feats_simclr = prepare_data_features(simclr_model, train_dataset, filename=f'{identifier}_regression_train.pt')
-    test_feats_simclr = prepare_data_features(simclr_model, test_dataset, filename=f'{identifier}_regression_test.pt')
+    train_feats_simclr = prepare_data_features(clr_model, train_dataset, filename=f'{identifier}_regression_train.pt')
+    test_feats_simclr = prepare_data_features(clr_model, test_dataset, filename=f'{identifier}_regression_test.pt')
 
     clf, mse, r2 = train_linear_model(train_feats_simclr, test_feats_simclr, identifier=identifier)
 

@@ -1,5 +1,3 @@
-## Large parts of this code are taken from https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial17/SimCLR.html
-## mostly copied from sim_clr/linear_eval
 import os
 import pytorch_lightning as pl
 import torch
@@ -8,14 +6,13 @@ import datetime
 
 from torch.utils import data
 from modules.regressor import Regressor
-from modules.simclr import SimCLR
 from data.regression import Regression
-from torch import nn
 from sklearn.metrics import r2_score, mean_absolute_error
 from MinkowskiEngine.utils import batch_sparse_collate
 from MinkowskiEngine import SparseTensor
 from utils.data import get_wandb_ckpt, load_yaml
 import numpy as np
+from test.regression.energy_regression import load_clr_model
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -56,44 +53,37 @@ def sim_clr_predict(loader, clr_collection):
         preds = np.hstack(preds)
     return preds, labels
 
-def wandb_models(model_names=None):
+def wandb_models(model_names):
     """Returns a dictionary with the paths of models from
     the wandb registry"""
-    if model_names is None:
-        model_names = [
-            'contrastive-model-augmentations-and-throws:v1',
-            'contrastive-augmentations:v3',
-            'regressor-energy:v0',
-        ]
+    
     print(f'Loading models: {model_names}')
     models = {
         name: get_wandb_ckpt(f"rradev/model-registry/{name}") for name in model_names 
     }
     return models
 
-def load_clr_model(ckpt_path, name):
-    clr = SimCLR.load_from_checkpoint(ckpt_path).cuda()
-    network = clr.model
-    network.mlp = nn.Identity() # Removing projection head g(.)
-    network.eval()
-    network.to(device)
-
-    #load bdt and scaler 
+def load_clr_pipeline(identifier):
+    #load bdt and scaler
     features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
-    load_path = os.path.join(features_path, f"{name}_regression.pkl")
-
+    load_path = os.path.join(features_path, f"{identifier}_pipeline.pkl")
+    
     if not os.path.exists(load_path):
         raise Exception(f'Could not find {load_path}. You must run linear_eval.py first.')
 
-    bdt, scaler = joblib.load(load_path) 
-    print(f'loaded model for {name} from {load_path}')
+    collection = joblib.load(load_path)
+    bdt = collection['bdt']
+    scaler = collection['scaler']
+
+    network = load_clr_model(f'rradev/model-registry/{identifier}')
+    print(f'loaded model for {identifier} from {load_path}')
     return {
         'network': network,
         'bdt': bdt,
         'scaler': scaler
     }
 
-def load_models(model_names=None):
+def load_models(model_names):
     # load all the models
     models_paths = wandb_models(model_names)
     model_names = list(models_paths.keys())
@@ -102,14 +92,14 @@ def load_models(model_names=None):
         if 'regressor' in name:
             models[name] = Regressor.load_from_checkpoint(models_paths[name], strict=False).cuda()
         else:
-            models[name] = load_clr_model(models_paths[name], name)
+            models[name] = load_clr_pipeline(name)
     return models
 
 def evaluate_models(models, throw_type):
 
     data_path = os.path.join(config['data']['throws'],'larndsim_converted', throw_type)
     dataset = Regression(root=data_path, energies='particle_energy_throws.pkl')
-    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)    
+    loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)    
     
     results = {}
     for model_name in models.keys():
@@ -130,8 +120,13 @@ def evaluate_models(models, throw_type):
     
 
 if __name__ == '__main__':
-    models = load_models()
+    model_names = [
+            'contrastive-model-augmentations-and-throws:v1',
+            'regressor-energy-corrected:v0',
+        ]
+    models = load_models(model_names)
     print('Models loaded', models.keys()) 
+
     results = {}
     for throw in config['throws'].values():
         print(f'Processing {throw}')

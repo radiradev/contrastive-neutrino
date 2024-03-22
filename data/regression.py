@@ -64,7 +64,7 @@ class Regression(torchvision.datasets.DatasetFolder):
         coords, feats = sample['coordinates'], sample['adc']
         energy = self.energies[self.replace_throw_part(os.path.basename(path))]['energy'] # summed_deps or energy
         # correct energy with the mass of the particle
-        #energy = self.correct_energy(energy, label)
+        energy = self.correct_energy(energy, label)
         coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size)
 
         return coords, feats, torch.tensor(energy).float().unsqueeze(0)
@@ -103,8 +103,6 @@ class RegressionProtons(torch.utils.data.Dataset):
         return len(self.samples)
 
     def loader(self, path):
-         # get eventID from the path
-        # get the filename
         filename = os.path.basename(path)
         # get the eventID
         eventID = filename.split('_')[-1].split('.')[0] # filename in the form {particle}_*_throw{num}_eventID_{id}.npz
