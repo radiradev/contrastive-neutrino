@@ -64,7 +64,11 @@ def main(args):
         model.train()
         for n_iter_epoch, data in enumerate(dataloader_train):
             model.set_input(data)
-            model.optimize_parameters()
+            try:
+                model.optimize_parameters()
+            except RuntimeError as e:
+                print("Encountered error: {}\nskipping this iteration...".format(e))
+                continue
 
             losses.append(model.get_current_loss())
 
@@ -110,7 +114,11 @@ def main(args):
         write_log_str(conf.checkpoint_dir, "== Validation Loop ==")
         for data in dataloader_val:
             model.set_input(data)
-            model.test(compute_loss=True)
+            try:
+                model.test(compute_loss=True)
+            except RuntimeError as e:
+                print("Encountered error: {}\nskipping this iteration...".format(e))
+                continue
 
             losses_val.append(model.get_current_loss())
 
