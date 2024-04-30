@@ -44,7 +44,7 @@ def main(args):
     dataloader_val = DataLoader(
         dataset_val,
         batch_size=conf.batch_size,
-        shuffle=False,
+        shuffle=True,
         collate_fn=collate_fn,
         num_workers=min(conf.max_num_workers, conf.batch_size),
         drop_last=True
