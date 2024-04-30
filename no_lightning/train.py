@@ -107,7 +107,7 @@ def main(args):
 
         # Validation loop
         model.eval()
-        print("Validation loop...")
+        write_log_str(conf.checkpoint_dir, "== Validation Loop ==")
         for data in dataloader_val:
             model.set_input(data)
             model.test(compute_loss=True)
