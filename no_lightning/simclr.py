@@ -1,3 +1,5 @@
+import os
+
 import torch; import torch.nn as nn
 from MinkowskiEngine import SparseTensor
 from loss import contrastive_loss, NT_Xent
@@ -39,6 +41,20 @@ class SimCLR(nn.Module):
 
     def scheduler_step(self):
         self.scheduler.step()
+
+    def save_networks(self, suffix):
+        torch.save(
+            self.net.cpu().state_dict(),
+            os.path.join(self.checkpoint_dir, "net_{}.pth".format(suffix))
+        )
+        self.net.to(self.device)
+
+    def load_network(self, path):
+        print("Loading model from {}".format(path))
+        state_dict = torch.load(path, map_location=self.device)
+        if hasattr(state_dict, "_metadata"):
+            del state_dict._metadata
+        self.net.load_state_dict(state_dict)
 
     def get_current_visuals(self):
         return {
