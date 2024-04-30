@@ -8,7 +8,8 @@ from dataset import DataPrepType
 defaults = {
     "device" : "cuda:0",
     "max_num_workers" : 4,
-    "lr_decay_iter": 0
+    "lr_decay_iter" : 0,
+    "save_model" : "never"
 }
 
 mandatory_fields = {
@@ -48,6 +49,13 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
 
     # if not isinstance(conf_dict["throw_names"], dict):
     #     raise ValueError("'throw_names' should be a dict of (throw file name, informative name)")
+
+    if conf_dict["save_model"] not in ["never", "latest", "best", "all"]:
+        raise ValueError(
+            "'save_model': {} invalid, choose 'never', 'latest', 'best', 'all'".format(
+                conf_dict["save_model"]
+            )
+        )
 
     if prep_checkpoint_dir:
         conf_dict["checkpoint_dir"] = os.path.join(conf_dict["checkpoints_dir"], conf_dict["name"])

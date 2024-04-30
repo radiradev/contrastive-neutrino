@@ -1,4 +1,4 @@
-name: "test"
+name: "test_clr_1"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/training_data/nominal/larndsim_throws_converted_nominal"
@@ -6,7 +6,8 @@ data_prep_type: "contrastive_augmentations"
 max_num_workers: 8
 
 model: "sim_clr"
+save_model: "all"
 
-batch_size: 60
-epochs: 100
+batch_size: 120
+epochs: 60
 
