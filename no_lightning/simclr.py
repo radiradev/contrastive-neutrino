@@ -42,7 +42,7 @@ class SimCLR(nn.Module):
     def scheduler_step(self):
         self.scheduler.step()
 
-    def save_networks(self, suffix):
+    def save_network(self, suffix):
         torch.save(
             self.net.cpu().state_dict(),
             os.path.join(self.checkpoint_dir, "net_{}.pth".format(suffix))
