@@ -8,6 +8,6 @@ max_num_workers: 16
 model: "sim_clr"
 save_model: "all"
 
-batch_size: 256
+batch_size: 512
 epochs: 60
 
