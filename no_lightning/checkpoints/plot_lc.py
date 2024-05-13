@@ -46,6 +46,7 @@ def main(args):
     ax.set_xlabel("Epoch")
     ax.set_ylabel("loss")
     ax.set_ylim(0, 1.2 * max(validation_losses))
+    plt.legend()
 
     plt.show()
 
