@@ -8,7 +8,10 @@ import MinkowskiEngine as ME
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn.utils import shuffle
+from sklearn.pipeline import make_pipeline
+import xgboost as xgb
 
 from config_parser import get_config
 from simclr import SimCLR
@@ -83,8 +86,9 @@ def main(args):
     val_data = torch.utils.data.TensorDataset(feats, labels)
 
     print("Training logistic regression...")
-
-    clf = LogisticRegression(verbose=True, solver='saga', max_iter=120, n_jobs=16)
+    # clf = xgb.XGBClassifier(verbosity=2, n_jobs=16, early_stopping_rounds=3, n_estimators=150, max_depth=16, learning_rate=0.100, reg_alpha=0.2, gamma=0.8, min_child_weight=0.5)
+    clf = LogisticRegression(verbose=True, solver='saga', max_iter=80, n_jobs=16)
+    # clf = MLPClassifier(hidden_layer_sizes=[512, 256, 128], learning_rate="adaptive", verbose=True, early_stopping=True, learning_rate_init=0.005, max_iter=100, tol=0.0001)
     x = train_data.tensors[0].numpy()
     y = train_data.tensors[1].numpy()
 
@@ -94,7 +98,10 @@ def main(args):
     scaler = StandardScaler()
     x, y = shuffle(x, y, random_state=123)  # Shuffling the data
     x = scaler.fit_transform(x)
+
+    # clf.fit(x, y, eval_set=[(test_x, test_y)])
     clf.fit(x, y)
+    # print(len(clf.get_booster().get_dump()))
 
     y_pred = clf.predict(scaler.transform(test_x))
     bal_acc_score = balanced_accuracy_score(test_y, y_pred)
@@ -103,10 +110,11 @@ def main(args):
     print(f"Balanced accuracy score: {bal_acc_score}")
     print(f"Accuracy score: {acc_score}")
 
-    dump_path = os.path.join(conf.checkpoint_dir, "finetune_model.pkl")
-    print(f"Pickling model and transform to {dump_path}")
-    with open(dump_path, "wb") as f:
-        pickle.dump((clf, scaler), f)
+    if args.pickle_model:
+        dump_path = os.path.join(conf.checkpoint_dir, "finetune_model_logreg.pkl")
+        print(f"Pickling model and transform to {dump_path}")
+        with open(dump_path, "wb") as f:
+            pickle.dump((clf, scaler), f)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -114,6 +122,8 @@ def parse_arguments():
     parser.add_argument("config")
     parser.add_argument("finetune_data_path")
     parser.add_argument("clr_weights")
+
+    parser.add_argument("--pickle_model", action="store_true")
 
     args = parser.parse_args()
 
