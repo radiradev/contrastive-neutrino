@@ -1,97 +1,84 @@
-import torch
-from voxel_convnext import VoxelConvNeXtClassifier
-import pytorch_lightning as pl
-from MinkowskiEngine import SparseTensor
+import os
+
 import numpy as np
-import torchmetrics
 
+import torch; import torch.nn as nn
+import MinkowskiEngine as ME
 
-class Classifier(pl.LightningModule):
-    def __init__(self, batch_size=None, device='cuda', num_classes=5):
-        if batch_size is None:
-            batch_size = 256
-            # raise ValueError("batch_size must be specified")
-        
+from voxel_convnext import VoxelConvNeXtClassifier
+
+class Classifier(nn.Module):
+    num_classes = 5
+
+    def __init__(self, conf):
         super().__init__()
-        self.device = torch.device(device)
-        self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=num_classes).to(
-            self.device
+
+        self.device = torch.device(conf.device)
+        self.checkpoint_dir = conf.checkpoint_dir
+
+        self.net = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=self.num_classes)
+        self.net.to(self.device)
+
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
+
+        self.criterion = torch.nn.CrossEntropyLoss()
+
+        self.loss = None
+
+        self.data = None
+        self.s_in = None
+        self.target_out = None
+        self.pred_out = None
+
+    def set_input(self, data):
+        self.data = data
+        coords, feats, labels  = data
+        self.target_out = labels.to(self.device)
+        self.s_in = ME.SparseTensor(coordinates=coords, features=feats.float(), device=self.device)
+
+    def eval(self):
+        self.net.eval()
+
+    def train(self):
+        self.net.train()
+
+    def scheduler_step(self):
+        self.scheduler.step()
+
+    def save_network(self, suffix):
+        torch.save(
+            self.net.cpu().state_dict(),
+            os.path.join(self.checkpoint_dir, "net_{}.pth".format(suffix))
         )
-        self.loss = torch.nn.CrossEntropyLoss()
+        self.net.to(self.device)
 
-        #metrics
-        self.train_acc = torchmetrics.Accuracy(task='multiclass', num_classes=5)
-        self.val_acc = torchmetrics.Accuracy(task='multiclass', num_classes=5)
+    def load_network(self, path):
+        print("Loading model from {}".format(path))
+        state_dict = torch.load(path, map_location=self.device)
+        if hasattr(state_dict, "_metadata"):
+            del state_dict._metadata
+        self.net.load_state_dict(state_dict)
 
-        #losses
-        self.train_loss = torchmetrics.MeanMetric()
-        self.val_loss = torchmetrics.MeanMetric()
+    def get_current_visuals(self):
+        return { "s_i" : self.s_in, "target_out" : self.target_out, "pred_out" : self.pred_out }
 
-        #track best loss
-        self.val_loss_best = torchmetrics.MinMetric()
+    def get_current_loss(self):
+        return self.loss.item()
 
-        self.batch_size = batch_size
+    def forward(self):
+        self.pred_out = self.net(self.s_in)
 
-    def on_train_start(self) -> None:
-        "Lightning hook called before training, useful to initialize things"
-        self.val_loss.reset()
-        self.val_loss_best.reset()
+    def test(self, compute_loss=True):
+        with torch.no_grad():
+            self.forward()
+            if compute_loss:
+                self.loss = self.criterion(self.pred_out, self.target_out)
 
-    def forward(self, x):
-        return self.model(x)
+    def optimize_parameters(self):
+        self.forward()
 
-    def _shared_step(self, batch, batch_idx):
-        coordinates, energy, labels = batch
-        stensor = SparseTensor(
-            features=energy.float(),
-            coordinates=coordinates,
-            device=self.device
-        )
-
-        predictions = self.model(stensor)
-        
-        loss = self.loss(predictions, labels)
-        return loss, predictions, labels
-    
-    def predict_(self, batch):
-        batch = (x.cuda() for x in batch)
-        _, predictions, label = self._shared_step(batch, batch_idx=None)
-        return predictions, label
-    
-    def training_step(self, batch, batch_idx):
-        loss, predictions, labels = self._shared_step(batch, batch_idx)
-        
-        #update metrics
-        self.train_loss(loss)
-        self.train_acc(predictions, labels)
-
-        #log metrics
-        self.log('train/loss', self.train_loss, prog_bar=True, on_step=True, on_epoch=True, batch_size=self.batch_size)
-        self.log('train/acc', self.train_acc, prog_bar=True, on_step=True, on_epoch=True, batch_size=self.batch_size)
-
-        return loss
-    
-    def validation_step(self, batch, batch_idx):
-        loss, predictions, labels = self._shared_step(batch, batch_idx)
-
-        #update metrics
-        self.val_loss(loss)
-        self.val_acc(predictions, labels)
-
-        #log metrics
-        self.log('val/loss', self.val_loss, on_step=False, on_epoch=True, batch_size=self.batch_size)
-        self.log('val/acc', self.val_acc, on_step=False, on_epoch=True, batch_size=self.batch_size)
-        return loss
-
-    def on_validation_epoch_end(self) -> None:
-        "Lightning hook that is called when a validation epoch ends."
-        loss = self.val_loss.compute()  # get current val acc
-        self.val_loss_best(loss)  # update best so far val acc
-        # log `val_acc_best` as a value through `.compute()` method, instead of as a metric object
-        # otherwise metric would be reset by lightning after each epoch
-        self.log("val/loss_best", self.val_loss_best.compute(), sync_dist=True, prog_bar=True)
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
-
+        self.optimizer.zero_grad()
+        self.loss = self.criterion(self.pred_out, self.target_out)
+        self.loss.backward()
+        self.optimizer.step()

@@ -1,0 +1,13 @@
+name: "test_clr_electhrow3_test"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw3" 
+data_prep_type: "contrastive_augmentations"
+max_num_workers: 10
+
+model: "sim_clr"
+save_model: "all"
+
+batch_size: 400
+epochs: 160
+
