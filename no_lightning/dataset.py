@@ -38,50 +38,11 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
     def __init__(self, dataroot, dataset_type, extensions='.npz', train_mode=True):
         super().__init__(root=dataroot, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
-        # Create the cache
-        if dataset_type == 'contrastive':
-            self.create_path_cache()
         self.train_mode = train_mode
 
     def loader(self, path):
         return np.load(path)
 
-    def create_path_cache(self):
-        """Prepares a cache dictionary based on file identifiers."""
-        self.path_cache = {}
-        
-        for path, _ in self.samples:
-            # Generate the identifier for the current path
-            parts = os.path.basename(path).split('_')
-            identifier_parts = [
-                part for part in parts if "throw" not in part and "nominal" not in part
-            ]
-            identifier = "_".join(identifier_parts)
-            
-            # Append the path to its identifier's list in the cache
-            if identifier not in self.path_cache:
-                self.path_cache[identifier] = []
-            self.path_cache[identifier].append(path)
-
-    def grab_other_path(self, path):
-        """Given a path, select another file with the same eventID and file number."""
-        # Generate the identifier for the given path
-        parts = os.path.basename(path).split('_')
-        identifier_parts = [
-            part for part in parts if "throw" not in part and "nominal" not in part
-        ]
-        identifier = "_".join(identifier_parts)
-        
-        # Retrieve potential matches from cache
-        potential_matches = [p for p in self.path_cache[identifier] if p != path]
-        
-        # Randomly select one
-        if potential_matches:
-            return np.random.choice(potential_matches)
-        else:
-            print(f"Did not find matching file for {path}")
-            return path
-    
     def contrastive_augmentations(self, xi, xj):
         funcs = [rotate, drop, shift_energy, translate] 
 
@@ -115,10 +76,17 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         return coords, feats
 
     def __getitem__(self, index: int):
-        if self.dataset_type == DataPrepType.CLASSIFICATION:
+        if (
+            self.dataset_type == DataPrepType.CLASSIFICATION or
+            self.dataset_type == DataPrepType.CLASSIFICATION_AUG
+        ):
             path, label = self.samples[index]
             sample = self.loader(path)
             coords, feats = sample['coordinates'], sample['adc']
+            if self.train_mode and self.dataset_type == DataPrepType.CLASSIFICATION_AUG:
+                coords, feats = self.augment_single(
+                    torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float)
+                )
             coords, feats = sparse_quantize(
                 coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size
             )
@@ -127,10 +95,10 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         elif self.dataset_type == DataPrepType.CONTRASTIVE_AUG:
             path, _ = self.samples[index]
             sample = self.loader(path)
-            coords, feats = sample['coordinates'], np.expand_dims(sample['charge'], axis=1)
+            coords, feats = sample['coordinates'], np.expand_dims(sample['adc'], axis=1)
             # no idea why coords is a tensor while feats is a numpy array
-            xi = (torch.tensor(coords), torch.tensor(feats))
-            xj = (torch.tensor(coords), torch.tensor(feats))
+            xi = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
+            xj = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
             xi, xj = self.contrastive_augmentations(xi, xj)
             return xi, xj
 
@@ -138,3 +106,4 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
 class DataPrepType(Enum):
     CONTRASTIVE_AUG = 1
     CLASSIFICATION = 2
+    CLASSIFICATION_AUG = 2

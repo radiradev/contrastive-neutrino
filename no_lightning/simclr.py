@@ -1,8 +1,9 @@
 import os
 
 import torch; import torch.nn as nn
-from MinkowskiEngine import SparseTensor
-from loss import contrastive_loss, NT_Xent
+import MinkowskiEngine as ME
+
+from loss import contrastive_loss
 from voxel_convnext import VoxelConvNeXtCLR
 
 class SimCLR(nn.Module):
@@ -83,7 +84,7 @@ class SimCLR(nn.Module):
         self.optimizer.step()
 
     def _create_tensor(self, features, coordinates):
-        return SparseTensor(
+        return ME.SparseTensor(
             features=features.float(),
             coordinates=coordinates,
             device=self.device
