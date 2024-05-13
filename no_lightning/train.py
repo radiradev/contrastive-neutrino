@@ -3,7 +3,7 @@ import time, argparse, os, glob
 import numpy as np
 
 import torch
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import DataLoader
 import MinkowskiEngine as ME
 
 from config_parser import get_config
@@ -17,9 +17,8 @@ def main(args):
 
     if conf.model == "sim_clr":
         model = SimCLR(conf)
-    elif conf.mode == "classifier":
-        raise NotImplementedError
-        # model = Classifier(batch_size=conf.batch_size, device=conf.device)
+    elif conf.model == "classifier":
+        model = Classifier(conf)
     else:
         raise ValueError("model must be ['sim_clr', 'classifier']")
 
