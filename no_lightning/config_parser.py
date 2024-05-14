@@ -9,7 +9,8 @@ defaults = {
     "device" : "cuda:0",
     "max_num_workers" : 4,
     "lr_decay_iter" : 0,
-    "save_model" : "never"
+    "save_model" : "never",
+    "net_dims" : [96, 192, 384, 768]
 }
 
 mandatory_fields = {

@@ -83,15 +83,16 @@ class VoxelConvNeXt(nn.Module):
                  ):
         super().__init__()
         self.depths = depths
+        self.dims = dims
         self.downsample_layers = nn.ModuleList() # stem and 3 intermediate downsampling conv layers
         stem = nn.Sequential(
-            MinkowskiConvolution(in_chans, dims[0], kernel_size=4, stride=4, dimension=D)
+            MinkowskiConvolution(in_chans, self.dims[0], kernel_size=4, stride=4, dimension=D)
         )
         self.downsample_layers.append(stem)
         for i in range(3):
             downsample_layer = nn.Sequential(
-                MinkowskiLayerNorm(dims[i], eps=1e-6),
-                MinkowskiConvolution(dims[i], dims[i+1], kernel_size=2, stride=2, bias=True, dimension=D)
+                MinkowskiLayerNorm(self.dims[i], eps=1e-6),
+                MinkowskiConvolution(self.dims[i], self.dims[i+1], kernel_size=2, stride=2, bias=True, dimension=D)
             )
             self.downsample_layers.append(downsample_layer)
         
@@ -103,7 +104,7 @@ class VoxelConvNeXt(nn.Module):
         cur = 0
         for i in range(4):
             stage = nn.Sequential(
-                *[Block(dim=dims[i], drop_path=dp_rates[cur + j], D=D, grn_norm=self.grn) for j in range(depths[i])]
+                *[Block(dim=self.dims[i], drop_path=dp_rates[cur + j], D=D, grn_norm=self.grn) for j in range(depths[i])]
             )
             self.stages.append(stage)
             cur += depths[i]
@@ -162,9 +163,9 @@ class VoxelConvNeXtCLR(VoxelConvNeXt):
         self.head = nn.Sequential(
             MinkowskiGlobalMaxPooling()) # 768
         self.mlp = nn.Sequential(
-            nn.Linear(768, 768),
+            nn.Linear(self.dims[-1], self.dims[-1]),
             nn.ReLU(),
-            nn.Linear(768, 768),
+            nn.Linear(self.dims[-1], self.dims[-1]),
             nn.ReLU(),
         )
 
