@@ -87,7 +87,7 @@ def main(args):
 
     print("Training logistic regression...")
     # clf = xgb.XGBClassifier(verbosity=2, n_jobs=16, early_stopping_rounds=3, n_estimators=150, max_depth=16, learning_rate=0.100, reg_alpha=0.2, gamma=0.8, min_child_weight=0.5)
-    clf = LogisticRegression(verbose=True, solver='saga', max_iter=80, n_jobs=16)
+    clf = LogisticRegression(verbose=True, solver='saga', max_iter=120, n_jobs=16)
     # clf = MLPClassifier(hidden_layer_sizes=[512, 256, 128], learning_rate="adaptive", verbose=True, early_stopping=True, learning_rate_init=0.005, max_iter=100, tol=0.0001)
     x = train_data.tensors[0].numpy()
     y = train_data.tensors[1].numpy()
