@@ -39,6 +39,13 @@ def main(args):
     model_classifier = Classifier(conf_classifier)
     model_classifier.load_network(args.classifier_weights)
     model_classifier.eval()
+    model_classifier_2 = Classifier(conf_classifier)
+    model_classifier_2.load_network(args.classifier_weights)
+    model_classifier_2.eval()
+    print("Dropping last linear layer")
+    network_classifier = model_classifier_2.net
+    network_classifier.head = nn.Sequential(ME.MinkowskiGlobalMaxPooling())
+    network_classifier.eval()
 
     dataset = ThrowsDataset(
         os.path.join(args.test_data_path, "test"), DataPrepType.CLASSIFICATION, train_mode=False
@@ -54,18 +61,22 @@ def main(args):
         drop_last=True
     )
 
-    print("Getting simCLR representations of data...")
-    feats, labels = [], []
+    print("Getting simCLR+classifier representations of data...")
+    feats_clr, feats_classifier, labels = [], [], []
     with torch.inference_mode():
         for batch_coords, batch_feats, batch_labels in tqdm(dataloader):
             batch_coords = batch_coords.to(device)
             batch_feats = batch_feats.to(device)
             stensor = ME.SparseTensor(features=batch_feats.float(), coordinates=batch_coords)
             out = network_clr(stensor)
-            feats.append(out.detach().cpu())
+            feats_clr.append(out.detach().cpu())
             batch_labels = torch.tensor(batch_labels).long()
             labels.append(batch_labels)
-    feats = torch.cat(feats, dim=0)
+            out = network_classifier(stensor)
+            feats_classifier.append(out.detach().cpu())
+    feats_clr = torch.cat(feats_clr, dim=0)
+    feats_classifier = torch.cat(feats_classifier, dim=0)
+    feats = torch.cat([feats_clr, feats_classifier], dim=1)
     labels = torch.cat(labels, dim=0)
     finetune_test_data = torch.utils.data.TensorDataset(feats, labels)
     print("Using finetuned model to get label predictions from CLR representations...")
@@ -78,7 +89,7 @@ def main(args):
     y_pred_classifier, y_target_classifier = [], []
     for data in tqdm(dataloader):
         model_classifier.set_input(data)
-        model_classifier.test(compute_loss=False)
+        model_classifier.test(compute_loss=True)
         vis = model_classifier.get_current_visuals()
         y_pred_classifier.append(vis["pred_out"].argmax(axis=1))
         y_target_classifier.append(vis["target_out"])

@@ -14,22 +14,32 @@ import xgboost as xgb
 
 from config_parser import get_config
 from simclr import SimCLR
+from classifier import Classifier
 from dataset import ThrowsDataset, DataPrepType
 
 def main(args):
     print("Setting random seed to 123")
     torch.manual_seed(123)
 
-    conf = get_config(args.config)
-    device = torch.device(conf.device)
+    conf_clr = get_config(args.config_clr)
+    conf_classifier = get_config(args.config_classifier)
+    device = torch.device(conf_clr.device)
 
-    print(f"Loading model from {args.clr_weights}")
-    model = SimCLR(conf)
-    model.load_network(args.clr_weights)
+    print(f"Loading CLR model from {args.clr_weights}")
+    model_clr = SimCLR(conf_clr)
+    model_clr.load_network(args.clr_weights)
     print("Dropping MLP")
-    network = model.net
-    network.mlp = nn.Identity()
-    network.eval()
+    network_clr = model_clr.net
+    network_clr.mlp = nn.Identity()
+    network_clr.eval()
+
+    print(f"Loading classifier model from {args.classifier_weights}")
+    model_classifier = Classifier(conf_classifier)
+    model_classifier.load_network(args.classifier_weights)
+    print("Dropping last linear layer")
+    network_classifier = model_classifier.net
+    network_classifier.head = nn.Sequential(ME.MinkowskiGlobalMaxPooling())
+    network_classifier.eval()
 
     print(f"Finetuning with dataset from {args.finetune_data_path}")
     dataset_train = ThrowsDataset(
@@ -39,48 +49,57 @@ def main(args):
         os.path.join(args.finetune_data_path, "val"), DataPrepType.CLASSIFICATION, train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
+    batch_size = min(conf_clr.batch_size, conf_classifier.batch_size)
     dataloader_train = DataLoader(
         dataset_train,
-        batch_size=conf.batch_size,
+        batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_fn,
-        num_workers=min(conf.max_num_workers, conf.batch_size),
+        num_workers=min(conf_clr.max_num_workers, batch_size),
         drop_last=True
     )
     dataloader_val = DataLoader(
         dataset_val,
-        batch_size=conf.batch_size,
+        batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_fn,
-        num_workers=min(conf.max_num_workers, conf.batch_size),
+        num_workers=min(conf_clr.max_num_workers, batch_size),
         drop_last=True
     )
 
-    print("Getting simCLR representations of data...")
-    feats, labels = [], []
+    print("Getting simCLR+classifier representations of data...")
+    feats_clr, feats_classifier, labels = [], [], []
     with torch.inference_mode():
         for batch_coords, batch_feats, batch_labels in tqdm(dataloader_train, desc="train data"):
             batch_coords = batch_coords.to(device)
             batch_feats = batch_feats.to(device)
             stensor = ME.SparseTensor(features=batch_feats.float(), coordinates=batch_coords)
-            out = network(stensor)
-            feats.append(out.detach().cpu())
+            out = network_clr(stensor)
+            feats_clr.append(out.detach().cpu())
             batch_labels = torch.tensor(batch_labels).long()
             labels.append(batch_labels)
-    feats = torch.cat(feats, dim=0)
+            out = network_classifier(stensor)
+            feats_classifier.append(out.detach().cpu())
+    feats_clr = torch.cat(feats_clr, dim=0)
+    feats_classifier = torch.cat(feats_classifier, dim=0)
+    feats = torch.cat([feats_clr, feats_classifier], dim=1)
     labels = torch.cat(labels, dim=0)
     train_data = torch.utils.data.TensorDataset(feats, labels)
-    feats, labels = [], []
+    feats_clr, feats_classifier, labels = [], [], []
     with torch.inference_mode():
         for batch_coords, batch_feats, batch_labels in tqdm(dataloader_val, desc="val data"):
             batch_coords = batch_coords.to(device)
             batch_feats = batch_feats.to(device)
             stensor = ME.SparseTensor(features=batch_feats.float(), coordinates=batch_coords)
-            out = network(stensor)
-            feats.append(out.detach().cpu())
+            out = network_clr(stensor)
+            feats_clr.append(out.detach().cpu())
             batch_labels = torch.tensor(batch_labels).long()
             labels.append(batch_labels)
-    feats = torch.cat(feats, dim=0)
+            out = network_classifier(stensor)
+            feats_classifier.append(out.detach().cpu())
+    feats_clr = torch.cat(feats_clr, dim=0)
+    feats_classifier = torch.cat(feats_classifier, dim=0)
+    feats = torch.cat([feats_clr, feats_classifier], dim=1)
     labels = torch.cat(labels, dim=0)
     val_data = torch.utils.data.TensorDataset(feats, labels)
 
@@ -110,7 +129,7 @@ def main(args):
     print(f"Accuracy score: {acc_score}")
 
     if args.pickle_model:
-        dump_path = os.path.join(conf.checkpoint_dir, "finetune_model_logreg.pkl")
+        dump_path = os.path.join(conf_clr.checkpoint_dir, "finetune_model_logreg_clrplusclassifier.pkl")
         print(f"Pickling model and transform to {dump_path}")
         with open(dump_path, "wb") as f:
             pickle.dump((clf, scaler), f)
@@ -118,9 +137,11 @@ def main(args):
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("config")
-    parser.add_argument("finetune_data_path")
+    parser.add_argument("config_clr")
+    parser.add_argument("config_classifier")
     parser.add_argument("clr_weights")
+    parser.add_argument("classifier_weights")
+    parser.add_argument("finetune_data_path")
 
     parser.add_argument("--pickle_model", action="store_true")
 
