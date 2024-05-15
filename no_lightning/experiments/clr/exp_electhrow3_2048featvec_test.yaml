@@ -6,7 +6,7 @@ data_prep_type: "contrastive_augmentations"
 max_num_workers: 10
 
 model: "sim_clr"
-save_model: "all"
+save_model: "best"
 net_dims: [256, 512, 1024, 2048]
 
 batch_size: 200
