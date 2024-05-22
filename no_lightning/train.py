@@ -25,8 +25,12 @@ def main(args):
     dataset_train = ThrowsDataset(
         os.path.join(conf.data_path, "train"), conf.data_prep_type
     )
+    if conf.data_prep_type == DataPrepType.CLASSIFICATION_AUG:
+        val_data_prep_type = DataPrepType.CLASSIFICATION
+    else:
+        val_data_prep_type = conf.data_prep_type
     dataset_val = ThrowsDataset(
-        os.path.join(conf.data_path, "val"), conf.data_prep_type, train_mode=False
+        os.path.join(conf.data_path, "val"), val_data_prep_type, train_mode=False
     )
     if conf.data_prep_type == DataPrepType.CLASSIFICATION:
         collate_fn = ME.utils.batch_sparse_collate
@@ -61,7 +65,15 @@ def main(args):
 
         # Train loop
         model.train()
-        for n_iter_epoch, data in enumerate(dataloader_train):
+        dataloader_train_iter = iter(dataloader_train)
+        for n_iter_epoch in range(len(dataloader_train)):
+            try:
+                data = next(dataloader_train_iter)
+            except RuntimeError as e:
+                print(f"RunTimeError! {e}")
+                n_iter += 1
+                continue
+
             model.set_input(data)
             try:
                 model.optimize_parameters()
@@ -111,7 +123,14 @@ def main(args):
         # Validation loop
         model.eval()
         write_log_str(conf.checkpoint_dir, "== Validation Loop ==")
-        for data in dataloader_val:
+        dataloader_val_iter = iter(dataloader_val)
+        for n_iter_epoch in range(len(dataloader_val)):
+            try:
+                data = next(dataloader_val_iter)
+            except RuntimeError as e:
+                print(f"RunTimeError! {e}")
+                continue
+
             model.set_input(data)
             try:
                 model.test(compute_loss=True)
