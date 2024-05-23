@@ -9,5 +9,4 @@ model: "classifier"
 save_model: "all"
 
 batch_size: 400
-epochs: 120
-
+epochs: 20
