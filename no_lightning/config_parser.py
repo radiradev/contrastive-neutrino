@@ -53,9 +53,9 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
     # if not isinstance(conf_dict["throw_names"], dict):
     #     raise ValueError("'throw_names' should be a dict of (throw file name, informative name)")
 
-    if conf_dict["save_model"] not in ["never", "latest", "best", "all"]:
+    if conf_dict["save_model"] not in ["never", "latest", "best", "all", "notrain"]:
         raise ValueError(
-            "'save_model': {} invalid, choose 'never', 'latest', 'best', 'all'".format(
+            "'save_model': {} invalid, choose 'never', 'latest', 'best', 'all', 'notrain'".format(
                 conf_dict["save_model"]
             )
         )

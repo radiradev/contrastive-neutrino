@@ -1,4 +1,4 @@
-import time, argparse, os, glob
+import time, argparse, os, glob, sys
 
 import numpy as np
 
@@ -57,6 +57,12 @@ def main(args):
     losses = []
     n_iter = 0
     prev_val_loss = float("inf")
+
+    # Save latest network
+    if conf.save_model == "notrain":
+        print("Saving latest nets...")
+        model.save_network("notrain")
+        return
 
     write_log_str(conf.checkpoint_dir, "Iters per epoch: {}".format(len(dataloader_train)))
 
