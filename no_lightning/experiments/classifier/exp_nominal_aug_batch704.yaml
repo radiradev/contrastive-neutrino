@@ -1,12 +1,13 @@
-name: "classifier_nominal"
+name: "classifier_nominal_aug_batch704"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
-data_prep_type: "classification"
+data_prep_type: "classification_augmentations"
 max_num_workers: 10
 
 model: "classifier"
 save_model: "all"
 
-batch_size: 400
-epochs: 20
+batch_size: 704
+epochs: 40
+
