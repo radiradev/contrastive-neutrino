@@ -115,7 +115,7 @@ def main(args):
         print(f"Pickling model and transform to {dump_path}")
         with open(dump_path, "wb") as f:
             pickle.dump((clf, scaler), f)
-        accs = { "acc" : acc_score, "balanced_add" : bal_acc_score }
+        accs = { "acc" : float(acc_score), "balanced_add" : float(bal_acc_score) }
         dump_path = os.path.join(conf.checkpoint_dir, "finetune_model_acc.yml")
         with open(dump_path, "w") as f:
             yaml.dump(accs, f)
