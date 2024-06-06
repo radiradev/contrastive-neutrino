@@ -1,7 +1,7 @@
-name: "clr_electhrow3_batch704"
+name: "clr_electhrow1_batch704"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/clr"
 
-data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw3"
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw1"
 data_prep_type: "contrastive_augmentations"
 max_num_workers: 11
 
