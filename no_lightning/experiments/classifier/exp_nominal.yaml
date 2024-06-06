@@ -1,5 +1,5 @@
-name: "classifier_nominal_noaug"
-checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints"
+name: "classifier_nominal"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
 data_prep_type: "classification"
