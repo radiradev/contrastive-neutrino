@@ -63,10 +63,10 @@ def wandb_models(model_names):
     }
     return models
 
-def load_clr_pipeline(identifier):
+def load_clr_pipeline(identifier, regress):
     #load bdt and scaler
     features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
-    load_path = os.path.join(features_path, f"{identifier}_pipeline.pkl")
+    load_path = os.path.join(features_path, f"{identifier}_{regress}_pipeline.pkl")
     
     if not os.path.exists(load_path):
         raise Exception(f'Could not find {load_path}. You must run linear_eval.py first.')
@@ -83,7 +83,7 @@ def load_clr_pipeline(identifier):
         'scaler': scaler
     }
 
-def load_models(model_names):
+def load_models(model_names, regress):
     # load all the models
     models_paths = wandb_models(model_names)
     model_names = list(models_paths.keys())
@@ -92,13 +92,13 @@ def load_models(model_names):
         if 'regressor' in name:
             models[name] = Regressor.load_from_checkpoint(models_paths[name], strict=False).cuda()
         else:
-            models[name] = load_clr_pipeline(name)
+            models[name] = load_clr_pipeline(name, regress)
     return models
 
-def evaluate_models(models, throw_type):
+def evaluate_models(models, throw, throw_type, regress):
 
-    data_path = os.path.join(config['data']['throws'],'larndsim_converted', throw_type)
-    dataset = Regression(root=data_path, energies='particle_energy_throws.pkl')
+    data_path = os.path.join(config['data'][throw_type],'larndsim_converted', throw)
+    dataset = Regression(root=data_path, energies='particle_energy_train.pkl', regress=regress)
     loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)    
     
     results = {}
@@ -122,20 +122,21 @@ def evaluate_models(models, throw_type):
 if __name__ == '__main__':
     model_names = [
             'contrastive-model-augmentations-and-throws:v1',
-            'regressor-energy-corrected:v0',
+            'regressor-summed-deps:v1',
+            'contrastive-augmentations:v3'
         ]
-    models = load_models(model_names)
+    regress = 'summed_deps'
+    throw_type = 'electronics_throws'
+    models = load_models(model_names, regress)
     print('Models loaded', models.keys()) 
 
     results = {}
-    for throw in config['throws'].values():
+    for throw in config[throw_type].values():
         print(f'Processing {throw}')
-        results[throw] = evaluate_models(models, throw)
+        results[throw] = evaluate_models(models, throw, throw_type=throw_type, regress=regress)
     
     # get current date
     date = datetime.datetime.now().strftime("%Y-%m-%d")
-    joblib.dump(results, f'/global/homes/r/rradev/contrastive-neutrino/test/regression/results/results_{date}.pkl')
+    joblib.dump(results, f'/global/homes/r/rradev/contrastive-neutrino/test/regression/results/{throw_type}_{regress}_{date}.pkl')
     
-
-
 

@@ -14,8 +14,8 @@ set dry_run == False to delete...
 
 def clean():
     parser = argparse.ArgumentParser()
-    parser.add_argument('userid', type=str)
-    parser.add_argument('project_name', type=str)
+    parser.add_argument('--userid', type=str, default='rradev')
+    parser.add_argument('--project_name', type=str, default='contrastive-neutrino')
     parser.add_argument('--delete', action='store_true', default=False)
     args = parser.parse_args()
     api = wandb.Api(overrides={"project": args.project_name, "entity": args.userid})
@@ -31,7 +31,11 @@ def clean():
                     else:
                         print(f'DELETING {version.name}')
                         if args.delete:
-                            version.delete()
+                            try:
+                                version.delete()
+                            except wandb.errors.CommError as e:
+                                print(f"Skipping deletion of artifact {version.name}: {e}")
+                            
 
     if not args.delete:
         print('this was a dry run, add --delete to confirm you want to delete/keep the above files')

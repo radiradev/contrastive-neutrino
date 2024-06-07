@@ -63,7 +63,7 @@ class ClassifierBaseDataset(torchvision.datasets.DatasetFolder):
     def __getitem__(self, index: int):
         path, label = self.samples[index]
         sample = self.loader(path)
-        coords, feats = sample['coordinates'], sample[self.feature]
+        coords, feats = sample['coordinates'], sample['adc']
         coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size)
         return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
@@ -97,9 +97,7 @@ class ClassifierAugmentedDataset(torchvision.datasets.DatasetFolder):
         return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
 
-class ContrastiveAugmentations(torchvision.datasets.DatasetFolder):
-    quantization_size = 0.38
-    
+class ContrastiveAugmentationsDataset(torchvision.datasets.DatasetFolder):
     def __init__(self, root, extensions='.npz'):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
         self.create_path_cache()
@@ -110,7 +108,7 @@ class ContrastiveAugmentations(torchvision.datasets.DatasetFolder):
     def __getitem__(self, index: int):
         path, _ = self.samples[index]
         sample = self.loader(path)
-        coords, feats = sample['coordinates'], np.expand_dims(sample[self.feature], axis=1)
+        coords, feats = sample['coordinates'], np.expand_dims(sample['adc'], axis=1)
         # no idea why coords is a tensor while feats is a numpy array
         xi, xj = (torch.tensor(coords), torch.tensor(feats)), (torch.tensor(coords), torch.tensor(feats))
         xi, xj = contrastive_augmentations(xi, xj)
@@ -118,9 +116,7 @@ class ContrastiveAugmentations(torchvision.datasets.DatasetFolder):
     
         
 class ContrastiveThrowsAugmentationsDataset(torchvision.datasets.DatasetFolder):
-    quantization_size = 0.38
-    
-    def __init__(self, dataset_type, root, extensions='.npz'):
+    def __init__(self, root, extensions='.npz'):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
         self.create_path_cache()
 
@@ -164,9 +160,14 @@ class ContrastiveThrowsAugmentationsDataset(torchvision.datasets.DatasetFolder):
         other_path = self.grab_other_path(path)  # This will now use the cache
         sample, other_sample = self.loader(path), self.loader(other_path)
 
-        coords_i, feats_i = sample['coordinates'], np.expand_dims(sample[self.feature], axis=1)
-        coords_j, feats_j = other_sample['coordinates'], np.expand_dims(other_sample[self.feature], axis=1)
+        coords_i, feats_i = sample['coordinates'], np.expand_dims(sample['adc'], axis=1)
+        coords_j, feats_j = other_sample['coordinates'], np.expand_dims(other_sample['adc'], axis=1)
 
         xi, xj = (torch.tensor(coords_i), torch.tensor(feats_i)), (torch.tensor(coords_j), torch.tensor(feats_j))
-        xi, xj = self.contrastive_augmentations(xi, xj)
+        xi, xj = contrastive_augmentations(xi, xj)
         return xi, xj 
+
+
+if __name__ == '__main__':
+    dataset = ContrastiveThrowsAugmentationsDataset(root='/pscratch/sd/r/rradev/larndsim_throws_converted_jun7/train')
+    print(dataset[0])

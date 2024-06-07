@@ -97,13 +97,10 @@ class VoxelConvNeXt(nn.Module):
         
         self.stages = nn.ModuleList() # 4 feature resolution stages, each consisting of multiple residual blocks
         dp_rates=[x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]
-        if grn is None:
-            raise ValueError("contrastive must be set to True or False")
-        self.grn = grn
         cur = 0
         for i in range(4):
             stage = nn.Sequential(
-                *[Block(dim=dims[i], drop_path=dp_rates[cur + j], D=D, grn_norm=self.grn) for j in range(depths[i])]
+                *[Block(dim=dims[i], drop_path=dp_rates[cur + j], D=D) for j in range(depths[i])]
             )
             self.stages.append(stage)
             cur += depths[i]

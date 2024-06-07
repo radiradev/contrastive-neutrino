@@ -1,0 +1,23 @@
+data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_jun7
+
+train_dataset:
+  _target_: data.dataset.ContrastiveThrowsAugmentationsDataset
+  root: ${data_path}/train/
+
+val_dataset:
+  _target_: data.dataset.ContrastiveThrowsAugmentationsDataset
+  root: ${data_path}/val/
+
+model: 
+  _target_: modules.simclr.SimCLR
+
+num_of_gpus: 1
+limit_train_batches: 0.1
+batch_size: 4
+collate_fn: utils.data.clr_sparse_collate
+
+wandb_checkpoint: 0
+
+run_name: contrastive_throws_augmentations
+
+

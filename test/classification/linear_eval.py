@@ -26,11 +26,11 @@ NUM_WORKERS = 12
 config = load_yaml('config/config.yaml')
 
 @torch.no_grad()
-def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True):
+def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True, reset_features=True):
     features_path = os.path.join(os.environ['PSCRATCH'], 'linear-eval-contrastive')
     full_filename = os.path.join(features_path, filename)
 
-    if os.path.exists(full_filename):
+    if os.path.exists(full_filename) and not reset_features:
         print("Found precomputed features, loading...")
         # Load features
         feats, labels = torch.load(full_filename)
@@ -44,7 +44,7 @@ def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True):
     network.to(device)
 
     # Encode all images
-    data_loader = data.DataLoader(dataset, batch_size=512, num_workers=NUM_WORKERS, shuffle=False, drop_last=False, collate_fn=batch_sparse_collate)
+    data_loader = data.DataLoader(dataset, batch_size=512, num_workers=NUM_WORKERS, shuffle=True, drop_last=False, collate_fn=batch_sparse_collate)
     feats, labels = [], []
     with torch.inference_mode():
         for batch_coords, batch_feats, batch_labels in tqdm(data_loader):
@@ -81,8 +81,8 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
         A tuple containing the trained logistic regression model, balanced accuracy score, and accuracy score.
     """
     # clf = LogisticRegression(use_gpu=True, verbose=True)
-    clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
-    # clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
+    # clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
+    clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
     X = train_feats_simclr.tensors[0].numpy()
     y = train_feats_simclr.tensors[1].numpy()
 

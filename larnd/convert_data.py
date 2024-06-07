@@ -92,17 +92,26 @@ def save_event(event_id, i_event, filename, packets, pckt_event_ids, vertices, t
     particle_name = filename.stem.split('_')[0]
     assert particle_name in ['electron', 'gamma', 'muon', 'pion', 'proton']
     file_index = int(filename.stem.split("_")[3])
-    target_folder = os.path.join(output_path, particle_name)
 
-#     if file_index < 230:
-#         target_folder = os.path.join(output_path, "train", particle_name)
+    # target_folder = os.path.join(output_path, particle_name)
+    
+    if file_index < 230:
+        target_folder = os.path.join(output_path, "train", particle_name)
+        # very stupid to check for this every time
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
 
-#     elif file_index < 240:
-#         target_folder = os.path.join(output_path, "val", particle_name)
+    elif file_index < 240:
+        target_folder = os.path.join(output_path, "val", particle_name)
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
 
-#     else:
-#         target_folder = os.path.join(output_path, "test", particle_name)
-    if len(coordinates) > 3:
+    else:
+        target_folder = os.path.join(output_path, "test", particle_name)
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
+
+    if len(coordinates) > 5: # save only if more than 5 voxels
         np.savez(f'{target_folder}/{filename.stem}_eventID_{event_id}.npz', 
                 adc=adc, 
                 coordinates=coordinates,
@@ -123,22 +132,18 @@ def process_file(filename, for_training=False):
 
 
 if __name__ == '__main__':
-    common = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/electronics_throws')
     throws = [f'throw{i}' for i in range(1, 11)] 
     throws = throws + ['nominal']
 
     for throw_number in throws:        
         print(f'Processing {throw_number}')
-        larnd_path = Path(common / 'larndsim')
+        larnd_path = Path('/global/cfs/cdirs/dune/users/rradev/contrastive/individual_particles/larndsim_throws')
 
-        output_path = os.path.join(common, 'larndsim_converted', throw_number)
+        output_path = Path('/pscratch/sd/r/rradev/larndsim_throws_converted_jun7')
         if not os.path.exists(output_path):
             os.makedirs(output_path)
 
         for particle_type in ['proton','electron', 'pion', 'muon', 'gamma']:
-                
-            if not os.path.exists(os.path.join(output_path, particle_type)):
-                os.makedirs(os.path.join(output_path, particle_type))
             
             print(f'Processing {particle_type} files')
             files = list(larnd_path.glob(f'{particle_type}*_{throw_number}.h5'))

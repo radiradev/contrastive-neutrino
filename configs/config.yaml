@@ -1,5 +1,5 @@
 data:
-  data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_new
+  data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_jun7
   nominal_data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_nominal
   throws: /global/cfs/cdirs/dune/users/rradev/contrastive/edep_2thousand_per_particle/
   electronics_throws: /global/cfs/cdirs/dune/users/rradev/contrastive/electronics_throws/ 

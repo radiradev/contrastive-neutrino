@@ -9,8 +9,7 @@ import torchmetrics
 class Regressor(pl.LightningModule):
     def __init__(self, batch_size=None, device='cuda'):
         if batch_size is None:
-            batch_size = 256
-            # raise ValueError("batch_size must be specified")
+            raise ValueError("batch_size must be specified")
         
         super().__init__()
         self.model = VoxelConvNeXtRegressor(in_chans=1, D=3, num_classes=1).to(device)

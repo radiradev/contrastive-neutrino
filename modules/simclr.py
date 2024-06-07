@@ -3,28 +3,22 @@ import torch
 import torchmetrics
 import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
-from modules.loss import contrastive_loss, NT_Xent
+from modules.loss import contrastive_loss, NT_Xent, SigLipLoss, nt_xent_loss
 from models.voxel_convnext import VoxelConvNeXtCLR
-
+from models.resnet import ResnetCLR
+import math
+import prodigyopt
 
 class SimCLR(pl.LightningModule):
-    def __init__(self, batch_size=None, num_gpus=1, gather_distributed=True):
+    def __init__(self, batch_size=None):
         if batch_size is None:
             batch_size = None
             #raise ValueError("batch_size must be specified")
         
         super().__init__()
         self.model = VoxelConvNeXtCLR(in_chans=1, D=3)
-        self.criterion = contrastive_loss
+        self.criterion = nt_xent_loss
         self.batch_size = batch_size
-
-        # sometimes we might want to use multiple gpus but a smaller efective batch_size
-        if num_gpus > 1 and gather_distributed:
-            self.gather_distributed = True
-        else: 
-            self.gather_distributed = False
-
-        #losses
         self.train_loss = torchmetrics.MeanMetric()
         self.val_loss = torchmetrics.MeanMetric()
         self.val_loss_best = torchmetrics.MinMetric()
@@ -50,7 +44,11 @@ class SimCLR(pl.LightningModule):
         xj = self._create_tensor(xj[1], xj[0])
         xi_out = self.model(xi)
         xj_out = self.model(xj)
-        loss = self.criterion(xi_out, xj_out)
+        try:
+            loss = self.criterion(xi_out, xj_out)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            loss = None 
         return loss
     
     def training_step(self, batch, batch_idx):
@@ -81,5 +79,5 @@ class SimCLR(pl.LightningModule):
         self.log("val/loss_best", self.val_loss_best.compute(), sync_dist=True, prog_bar=True)    
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        optimizer = prodigyopt.Prodigy(self.parameters())
         return optimizer

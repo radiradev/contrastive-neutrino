@@ -62,7 +62,7 @@ def wandb_models(model_names=None):
     if model_names is None:
         model_names = [
             'contrastive-model-augmentations-and-throws:v1',
-            'contrastive-augmentations:v3',
+            #'contrastive-augmentations:v3',
             'classifier-augmentations-throws:v0',
             'classifier-augmentations:v0',
             'classifier-nominal-only:v0'
@@ -107,17 +107,21 @@ def load_models(model_names=None):
     return models
 
 def evaluate_models(models, throw, throw_type):
-    data_path = os.path.join(config['data'][throw_type],'larndsim_converted', throw)
-    dataset = ThrowsDataset(dataset_type='single_particle', root=data_path)
-    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True)    
+    data_path = os.path.join(config['data'][throw_type],'larndsim_converted', throw) 
                
     sample_size = 1792 # batch_size * 7 not all events present in the larnd data
     results = {}
     for model_name in models.keys():
         if 'classifier' in model_name:
+            dataset = ThrowsDataset(dataset_type='single_particle', root=data_path, feature='adc')
+            loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)   
             preds, labels = classifier_predict(loader, models[model_name])
+            del dataset
         else:
+            dataset = ThrowsDataset(dataset_type='single_particle', root=data_path, feature='adc')
+            loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)  
             preds, labels = sim_clr_predict(loader, models[model_name])
+            del dataset
         print(labels.shape, preds.shape)
         acc = accuracy_score(labels, preds.argmax(axis=1))
         bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
@@ -134,7 +138,7 @@ if __name__ == '__main__':
     models = load_models()
     print('Models loaded', models.keys()) 
     results = {}
-    throw_type = 'throws'
+    throw_type = 'electronics_throws'
     for throw in config[throw_type].values():
         print(f'Processing {throw}')
         results[throw] = evaluate_models(models, throw, throw_type)

@@ -1,52 +1,24 @@
 import torch
 import pytorch_lightning as pl
-from data.dataset import CLRDataset, ThrowsDataset
-from modules.simclr import SimCLR
-from modules.classifier import Classifier
-from modules.regressor import Regressor
 from torch.utils.data import random_split, DataLoader
 import os
 from pytorch_lightning.loggers import WandbLogger
 from utils.data import clr_sparse_collate, load_yaml
 from MinkowskiEngine.utils import batch_sparse_collate
-import torch.distributed as dist
 import fire
 from utils.data import get_wandb_ckpt
-from data.regression import Regression
-
+import hydra
+from omegaconf import DictConfig
+from pytorch_lightning import LightningModule
 
     
-config = load_yaml('config/config.yaml')
+config = load_yaml('configs/config.yaml')
 
+def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
+    environment_variables = ['WANDB_DIR', 'WANDB_CACHE_DIR', 'WANDB_CONFIG_DIR', 'WANDB_DATA_DIR']
+    for variable in environment_variables:
+        os.environ[variable] = tmp_dir
 
-def dataloaders(batch_size: int, data_path: str, dataset_type: str, num_workers=64, pin_memory=True):
-    # This is a huge mess
-    if dataset_type == 'contrastive' or dataset_type == 'throws_augmented':
-        print("Using dataset with Throws...")
-        data_path = config['data']['data_path']
-    else:
-        data_path = config['data']['nominal_data_path']
-
-    if dataset_type == 'regression':
-        train_dataset = Regression(os.path.join(data_path, 'train'))
-        val_dataset = Regression(os.path.join(data_path, 'val'))
-
-    else:
-        # for classification and contrastive
-        dataset_type = 'single_particle_augmented' if dataset_type == 'throws_augmented' else dataset_type
-        train_dataset = ThrowsDataset(dataset_type, os.path.join(data_path, 'train'))
-
-        val_data_path = data_path
-        if dataset_type != 'contrastive':
-            val_data_path = config['data']['nominal_data_path']
-        val_dataset = ThrowsDataset(dataset_type, os.path.join(val_data_path, 'val'), train_mode=False)
-
-    collate_fn = batch_sparse_collate if dataset_type == 'single_particle' or dataset_type=='single_particle_augmented' or dataset_type=='regression' else clr_sparse_collate
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
-    return train_loader, val_dataloader
-
-# callbacks
 checkpoint_callback = pl.callbacks.ModelCheckpoint(
     dirpath=config['checkpoint_dirpath'],
     monitor='val/loss',
@@ -56,45 +28,38 @@ checkpoint_callback = pl.callbacks.ModelCheckpoint(
     save_last=True,
 )
 
-num_of_gpus = torch.cuda.device_count()
-assert num_of_gpus > 0, "This code must be run with at least one GPU"
+def dataloaders(batch_size: int, train_dataset, val_dataset, collate_fn, num_workers=64, pin_memory=True):
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
+    return train_loader, val_dataloader
 
+@hydra.main(version_base="1.3", config_path="configs", config_name="contrastive_throws_augmentations.yaml")
+def train(cfg):
+    print(f"Instantiating model <{cfg.model._target_}>")
+    model: LightningModule = hydra.utils.instantiate(cfg.model)
+    print(model)
+    train_dataset = hydra.utils.instantiate(cfg.train_dataset)
+    val_dataset = hydra.utils.instantiate(cfg.val_dataset)
 
-def set_wandb_vars(tmp_dir=config['wandb_tmp_dir']):
-    environment_variables = ['WANDB_DIR', 'WANDB_CACHE_DIR', 'WANDB_CONFIG_DIR', 'WANDB_DATA_DIR']
-    for variable in environment_variables:
-        os.environ[variable] = tmp_dir
+    train_loader, val_dataloader = dataloaders(cfg.batch_size, train_dataset, val_dataset, cfg.collate_fn)
 
-
-def train_model(batch_size=256, num_of_gpus=1, dataset_type='single_particle', model=None, wandb_checkpoint=None, gather_distributed=False, run_name=None):
-    if model == "sim_clr":
-        model = SimCLR(batch_size, num_of_gpus, bool(gather_distributed))
-    elif model == "classifier":
-        model = Classifier(batch_size)
-    elif model == "regressor":
-        model = Regressor(batch_size)
-    else:
-        raise ValueError("Model: sim_clr, classifier or regressor")
-    
     set_wandb_vars()
-    wandb_logger = WandbLogger(name=run_name, project='contrastive-neutrino', log_model='all')
-    data_path = config['data']['data_path']
-    train_loader, val_dataloader = dataloaders(batch_size, data_path=data_path, dataset_type=dataset_type)
-    
-    if wandb_checkpoint is not None:
-        checkpoint = get_wandb_ckpt(wandb_checkpoint)
+    wandb_logger = WandbLogger(name=cfg.run_name, project='contrastive-neutrino2', log_model='all')
+    if cfg.wandb_checkpoint != 0:
+        checkpoint = get_wandb_ckpt(cfg.wandb_checkpoint)
     else:
         checkpoint = None
 
-    limit_train_batches = 1.0 if dataset_type!='throws_augmented' else 0.1
-    print(f"Limiting train batches to {limit_train_batches} for dataset type {dataset_type}")     
-    trainer = pl.Trainer(accelerator='gpu', gpus=num_of_gpus, max_epochs=800, 
-                         limit_train_batches=limit_train_batches, callbacks=[checkpoint_callback], 
+    trainer = pl.Trainer(accelerator='gpu', gpus=cfg.num_of_gpus, max_epochs=800, 
+                         limit_train_batches=cfg.limit_train_batches, callbacks=[checkpoint_callback], 
                          logger=wandb_logger, log_every_n_steps=5)
     trainer.fit(model, train_loader, val_dataloader, ckpt_path=checkpoint)
 
+
 if __name__ == '__main__':
-    fire.Fire(train_model)
+    train()
+
+
 
 
 
