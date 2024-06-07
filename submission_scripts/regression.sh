@@ -1,1 +1,0 @@
-shifter python3 train.py --model regressor --batch_size 256 --dataset_type regression --gather_distributed False

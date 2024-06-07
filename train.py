@@ -1,14 +1,10 @@
-import torch
 import pytorch_lightning as pl
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import DataLoader
 import os
 from pytorch_lightning.loggers import WandbLogger
-from utils.data import clr_sparse_collate, load_yaml
-from MinkowskiEngine.utils import batch_sparse_collate
-import fire
+from utils.data import load_yaml
 from utils.data import get_wandb_ckpt
 import hydra
-from omegaconf import DictConfig
 from pytorch_lightning import LightningModule
 
     
@@ -33,15 +29,15 @@ def dataloaders(batch_size: int, train_dataset, val_dataset, collate_fn, num_wor
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
     return train_loader, val_dataloader
 
-@hydra.main(version_base="1.3", config_path="configs", config_name="contrastive_throws_augmentations.yaml")
+@hydra.main(version_base="1.3", config_path="configs", config_name=None)
 def train(cfg):
     print(f"Instantiating model <{cfg.model._target_}>")
     model: LightningModule = hydra.utils.instantiate(cfg.model)
-    print(model)
+
     train_dataset = hydra.utils.instantiate(cfg.train_dataset)
     val_dataset = hydra.utils.instantiate(cfg.val_dataset)
-
-    train_loader, val_dataloader = dataloaders(cfg.batch_size, train_dataset, val_dataset, cfg.collate_fn)
+    collate_fn = hydra.utils.instantiate(cfg.collate_fn)
+    train_loader, val_dataloader = dataloaders(cfg.batch_size, train_dataset, val_dataset, collate_fn)
 
     set_wandb_vars()
     wandb_logger = WandbLogger(name=cfg.run_name, project='contrastive-neutrino2', log_model='all')
@@ -58,9 +54,6 @@ def train(cfg):
 
 if __name__ == '__main__':
     train()
-
-
-
 
 
 

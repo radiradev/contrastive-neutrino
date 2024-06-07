@@ -46,7 +46,7 @@ class Block(nn.Module):
         self.norm = MinkowskiLayerNorm(dim, 1e-6)
         self.pwconv1 = MinkowskiLinear(dim, 4 * dim)   
         self.act = MinkowskiGELU()
-        self.norm2 = MinkowskiLayerNorm(dim, 1e-6)
+        self.norm2 = MinkowskiLayerNorm(dim * 4, 1e-6)
         self.pwconv2 = MinkowskiLinear(4 * dim, dim)
         self.drop_path = MinkowskiDropPath(drop_path)
     

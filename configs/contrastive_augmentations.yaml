@@ -1,0 +1,25 @@
+data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_nominal
+
+train_dataset:
+  _target_: data.dataset.ContrastiveAugmentationsDataset
+  root: ${data_path}/train/
+
+val_dataset:
+  _target_: data.dataset.ContrastiveAugmentationsDataset
+  root: ${data_path}/val/
+
+model: 
+  _target_: modules.simclr.SimCLR
+
+num_of_gpus: 1
+limit_train_batches: 1.0
+batch_size: 4
+collate_fn:
+  _target_: utils.data.clr_sparse_collate
+  _partial_: True
+
+wandb_checkpoint: 0
+
+run_name: contrastive_augmentations
+
+

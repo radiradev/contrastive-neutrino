@@ -64,7 +64,7 @@ class ClassifierBaseDataset(torchvision.datasets.DatasetFolder):
         path, label = self.samples[index]
         sample = self.loader(path)
         coords, feats = sample['coordinates'], sample['adc']
-        coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size)
+        coords, feats = sparse_quantize(torch.tensor(coords, dtype=torch.float), torch.tensor(np.expand_dims(feats, axis=1), dtype=torch.float), quantization_size=self.quantization_size)
         return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
 
@@ -88,7 +88,7 @@ class ClassifierAugmentedDataset(torchvision.datasets.DatasetFolder):
         sample = self.loader(path)
         
         coords, feats = sample['coordinates'], sample['adc']
-        coords, feats = torch.tensor(coords), torch.tensor(np.expand_dims(feats, axis=1), dtype=torch.float32)
+        coords, feats = torch.tensor(coords, dtype=torch.float), torch.tensor(np.expand_dims(feats, axis=1), dtype=torch.float32)
         
         if self.train_mode:
             coords, feats = self.augment_single(coords, feats)
@@ -100,8 +100,7 @@ class ClassifierAugmentedDataset(torchvision.datasets.DatasetFolder):
 class ContrastiveAugmentationsDataset(torchvision.datasets.DatasetFolder):
     def __init__(self, root, extensions='.npz'):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
-        self.create_path_cache()
-
+        
     def loader(self, path):
         return np.load(path)
 
@@ -110,7 +109,8 @@ class ContrastiveAugmentationsDataset(torchvision.datasets.DatasetFolder):
         sample = self.loader(path)
         coords, feats = sample['coordinates'], np.expand_dims(sample['adc'], axis=1)
         # no idea why coords is a tensor while feats is a numpy array
-        xi, xj = (torch.tensor(coords), torch.tensor(feats)), (torch.tensor(coords), torch.tensor(feats))
+        xi = (torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float))
+        xj = (torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float))
         xi, xj = contrastive_augmentations(xi, xj)
         return xi, xj
     
@@ -163,7 +163,8 @@ class ContrastiveThrowsAugmentationsDataset(torchvision.datasets.DatasetFolder):
         coords_i, feats_i = sample['coordinates'], np.expand_dims(sample['adc'], axis=1)
         coords_j, feats_j = other_sample['coordinates'], np.expand_dims(other_sample['adc'], axis=1)
 
-        xi, xj = (torch.tensor(coords_i), torch.tensor(feats_i)), (torch.tensor(coords_j), torch.tensor(feats_j))
+        xi = (torch.tensor(coords_i, dtype=torch.float), torch.tensor(feats_i, dtype=torch.float))
+        xj = (torch.tensor(coords_j, dtype=torch.float), torch.tensor(feats_j, dtype=torch.float))
         xi, xj = contrastive_augmentations(xi, xj)
         return xi, xj 
 

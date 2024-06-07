@@ -1,11 +1,11 @@
 data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_jun7
 
 train_dataset:
-  _target_: data.dataset.ContrastiveThrowsAugmentationsDataset
+  _target_: data.dataset.ContrastiveAugmentationsThrowsDataset
   root: ${data_path}/train/
 
 val_dataset:
-  _target_: data.dataset.ContrastiveThrowsAugmentationsDataset
+  _target_: data.dataset.ContrastiveAugmentationsThrowsDataset
   root: ${data_path}/val/
 
 model: 
@@ -14,7 +14,9 @@ model:
 num_of_gpus: 1
 limit_train_batches: 0.1
 batch_size: 4
-collate_fn: utils.data.clr_sparse_collate
+collate_fn:
+  _target_: utils.data.clr_sparse_collate
+  _partial_: True
 
 wandb_checkpoint: 0
 
