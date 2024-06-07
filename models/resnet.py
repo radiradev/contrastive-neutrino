@@ -42,7 +42,7 @@ class ResNetBase(nn.Module):
         )
 
         self.conv5 = nn.Sequential(
-            ME.MinkowskiDropout(),
+            # ME.MinkowskiDropout(),
             ME.MinkowskiConvolution(
                 self.inplanes, self.inplanes, kernel_size=3, stride=3, dimension=D
             ),
@@ -52,7 +52,7 @@ class ResNetBase(nn.Module):
 
         self.glob_pool = ME.MinkowskiGlobalMaxPooling()
 
-        self.final = ME.MinkowskiLinear(self.inplanes, out_channels, bias=True)
+        self.final = nn.Linear(self.inplanes, out_channels, bias=True)
 
     def weight_initialization(self):
         for m in self.modules():
@@ -104,10 +104,37 @@ class ResNetBase(nn.Module):
         x = self.layer3(x)
         x = self.layer4(x)
         x = self.conv5(x)
-        x = self.glob_pool(x)
+        x = self.glob_pool(x).F # get features from sparse tensor
         return self.final(x)
 
+class ResnetCLR(ResNetBase):
+    BLOCK = BasicBlock
+    LAYERS = (3, 4, 6, 3)
+
+    def __init__(self, in_channels, D=3):
+        super().__init__(in_channels, D)
+    
+        self.mlp = nn.Sequential(
+                nn.Linear(512, 512),
+                nn.ReLU(),
+                nn.Linear(512, 512),
+                nn.ReLU(),
+            )
+    
+    def forward(self, x: ME.SparseTensor):
+        x = self.conv1(x)
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.conv5(x)
+        x = self.glob_pool(x)
+        return self.mlp(x.F)
 
 class ResNet14(ResNetBase):
     BLOCK = BasicBlock
     LAYERS = (1, 1, 1, 1)
+
+class ResNet34(ResNetBase):
+    BLOCK = BasicBlock
+    LAYERS = (3, 4, 6, 3)
