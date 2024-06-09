@@ -1,6 +1,5 @@
-import os
 from enum import Enum
-from glob import glob
+from collections import deque
 
 import numpy as np
 
@@ -11,7 +10,7 @@ from MinkowskiEngine.utils import sparse_quantize
 
 from rotation_conversions import random_rotation
 
-# this must be faster to do when batched 
+# this must be faster to do when batched
 def rotate(coords, feats):
     coords = coords @ random_rotation(dtype=coords.dtype, device=coords.device)
     return coords, feats
@@ -34,31 +33,33 @@ def identity(coords, feats):
 
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     quantization_size = 0.38
-    
+
     def __init__(self, dataroot, dataset_type, extensions='.npz', train_mode=True):
         super().__init__(root=dataroot, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
         self.train_mode = train_mode
 
+        self.index_history = deque(self.__len__() * [0], self.__len__())
+
     def loader(self, path):
         return np.load(path)
 
     def contrastive_augmentations(self, xi, xj):
-        funcs = [rotate, drop, shift_energy, translate] 
+        funcs = [rotate, drop, shift_energy, translate]
 
         coords_i, feat_i = xi
         coords_j, feat_j = xj
-    
+
         # draw functions and augment i
         funcs_i = np.random.choice(funcs, 2)
         funcs_j = np.random.choice(funcs, 2)
 
         for func in funcs_i:
             coords_i, feat_i = func(coords_i, feat_i)
-        
+
         for func in funcs_j:
             coords_j, feat_j = func(coords_j, feat_j)
-        
+
         coords_i, feat_i = sparse_quantize(
             coords_i, feat_i, quantization_size=self.quantization_size
         )
@@ -66,8 +67,8 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             coords_j, feat_j, quantization_size=self.quantization_size
         )
 
-        return (coords_i, feat_i), (coords_j, feat_j) 
-    
+        return (coords_i, feat_i), (coords_j, feat_j)
+
     def augment_single(self, coords, feats):
         funcs = [rotate, drop, shift_energy, translate]
         funcs = np.random.choice(funcs, 2)
@@ -76,6 +77,8 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         return coords, feats
 
     def __getitem__(self, index: int):
+        self.index_history.append(index)
+
         if (
             self.dataset_type == DataPrepType.CLASSIFICATION or
             self.dataset_type == DataPrepType.CLASSIFICATION_AUG
