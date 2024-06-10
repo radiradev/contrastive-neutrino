@@ -34,10 +34,11 @@ def main(args):
 
     print(f"Finetuning with dataset from {args.finetune_data_path}")
     dataset_train = ThrowsDataset(
-        os.path.join(args.finetune_data_path, "train"), DataPrepType.CLASSIFICATION
+        os.path.join(args.finetune_data_path, "train"), DataPrepType.CLASSIFICATION, conf.augs,
     )
     dataset_val = ThrowsDataset(
-        os.path.join(args.finetune_data_path, "val"), DataPrepType.CLASSIFICATION, train_mode=False
+        os.path.join(args.finetune_data_path, "val"), DataPrepType.CLASSIFICATION, conf.augs,
+        train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
     dataloader_train = DataLoader(

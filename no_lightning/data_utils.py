@@ -4,8 +4,6 @@ import os
 import wandb
 from MinkowskiEngine.utils import sparse_collate
 
-
-
 def clr_sparse_collate(data, dtype=torch.int32, device=None):
     # Unzip the dataset into separate coordinate and feature tuples for i and j
     x_i, x_j = zip(*data)
