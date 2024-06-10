@@ -112,12 +112,12 @@ def main(args):
     print(f"Accuracy score: {acc_score}")
 
     if args.pickle_model:
-        dump_path = os.path.join(conf.checkpoint_dir, "finetune_model_logreg.pkl")
+        dump_path = os.path.join(conf.checkpoint_dir, args.pickle_name + ".pkl")
         print(f"Pickling model and transform to {dump_path}")
         with open(dump_path, "wb") as f:
             pickle.dump((clf, scaler), f)
         accs = { "acc" : float(acc_score), "balanced_add" : float(bal_acc_score) }
-        dump_path = os.path.join(conf.checkpoint_dir, "finetune_model_acc.yml")
+        dump_path = os.path.join(conf.checkpoint_dir, args.pickle_name + "_acc.yml")
         with open(dump_path, "w") as f:
             yaml.dump(accs, f)
 
@@ -129,6 +129,7 @@ def parse_arguments():
     parser.add_argument("clr_weights")
 
     parser.add_argument("--pickle_model", action="store_true")
+    parser.add_argument("--pickle_name", type=str, default="finetune_model_logreg")
     parser.add_argument("--max_iter", type=int, default=120)
 
     args = parser.parse_args()
