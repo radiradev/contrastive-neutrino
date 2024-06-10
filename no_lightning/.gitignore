@@ -2,3 +2,5 @@
 !checkpoints/
 
 jobs/logs
+
+plotting/.venv_*
