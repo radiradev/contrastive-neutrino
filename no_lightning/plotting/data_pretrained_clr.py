@@ -11,7 +11,8 @@ from sklearn.metrics import accuracy_score
 
 CHECKPOINT_DIR = "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints"
 
-CLASSIFIER = "classifier/classifier_nominal_batch672"
+CLASSIFIER = "classifier/classifier_nominal_aug_batch672"
+NOTRAIN_CLR = "clr/clr_notrain"
 CLRS = {
     "nominal" : "clr/clr_nominal_batch672",
     "electhrow1" : "clr/clr_electhrow1_batch672",
@@ -20,7 +21,7 @@ CLRS = {
 
 def main():
     datasets = list(CLRS)
-    nominal_accs, clr_accs = [], []
+    nominal_accs, clr_accs, notrain_clr_accs = [], [], []
     for dataset in tqdm(datasets):
         clf_preds_path = os.path.join(
             CHECKPOINT_DIR, CLASSIFIER, "test_results", f"preds_{dataset}.yml"
@@ -30,13 +31,18 @@ def main():
             CHECKPOINT_DIR, CLRS[dataset], "test_results", f"preds_{dataset}.yml"
         )
         clr_accs.append(get_acc(clr_preds_path))
+        notrain_clr_preds_path = os.path.join(
+            CHECKPOINT_DIR, NOTRAIN_CLR, "test_results", f"preds_{dataset}.yml"
+        )
+        notrain_clr_accs.append(get_acc(notrain_clr_preds_path))
 
     x = np.arange(len(datasets))
-    width = 0.25
+    width = 0.2
     spacing = 0.0
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - (width + spacing) / 2, nominal_accs, width, label="nominal classifier")
-    rects2 = ax.bar(x + (width + spacing) / 2, clr_accs, width, label="pretrained clr")
+    rects1 = ax.bar(x - (width + spacing), nominal_accs, width, label="nominal classifier")
+    rects2 = ax.bar(x, clr_accs, width, label="pretrained clr")
+    rects3 = ax.bar(x + (width + spacing), notrain_clr_accs, width, label="random clr")
     ax.set_ylabel("Accuracy")
     ax.set_title("Pretrained CLR performance for different 'data' realisations")
     ax.set_xticks(x)
@@ -47,6 +53,7 @@ def main():
     ax.legend()
     autolabel(rects1, ax)
     autolabel(rects2, ax)
+    autolabel(rects3, ax)
 
     fig.tight_layout()
     plt.savefig("pretrained_clr_acc.pdf")
@@ -72,7 +79,8 @@ def autolabel(rects, ax):
             xytext=(0, 3),
             textcoords="offset points",
             ha='center',
-            va='bottom'
+            va='bottom',
+            fontsize=8
         )
 
 if __name__ == "__main__":
