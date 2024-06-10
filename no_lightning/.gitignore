@@ -4,3 +4,4 @@
 jobs/logs
 
 plotting/.venv_*
+plotting/*.pdf
