@@ -8,36 +8,14 @@ import torchvision
 
 from MinkowskiEngine.utils import sparse_quantize
 
-from rotation_conversions import random_rotation
-
-# this must be faster to do when batched
-def rotate(coords, feats):
-    coords = coords @ random_rotation(dtype=coords.dtype, device=coords.device)
-    return coords, feats
-
-def drop(coords, feats, p=0.1):
-    mask = torch.rand(coords.shape[0]) > p
-    return coords[mask], feats[mask]
-
-def shift_energy(coords, feats, max_scale_factor=0.1):
-    shift = 1 - torch.rand(1, dtype=feats.dtype, device=feats.device) * max_scale_factor
-    return coords, feats * shift
-
-def translate(coords, feats, cube_size=512):
-    normalized_shift = torch.rand(3, dtype=coords.dtype, device=coords.device)
-    translation = normalized_shift * (cube_size / 10)
-    return coords + translation, feats
-
-def identity(coords, feats):
-    return coords, feats
-
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     quantization_size = 0.38
 
-    def __init__(self, dataroot, dataset_type, extensions='.npz', train_mode=True):
+    def __init__(self, dataroot, dataset_type, augs, extensions='.npz', train_mode=True):
         super().__init__(root=dataroot, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
         self.train_mode = train_mode
+        self.augs = augs
 
         self.index_history = deque(self.__len__() * [0], self.__len__())
 
@@ -45,14 +23,14 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         return np.load(path)
 
     def contrastive_augmentations(self, xi, xj):
-        funcs = [rotate, drop, shift_energy, translate]
+        funcs = self.augs
 
         coords_i, feat_i = xi
         coords_j, feat_j = xj
 
         # draw functions and augment i
-        funcs_i = np.random.choice(funcs, 2)
-        funcs_j = np.random.choice(funcs, 2)
+        funcs_i = np.random.choice(funcs, min(2, len(funcs)))
+        funcs_j = np.random.choice(funcs, min(2, len(funcs)))
 
         for func in funcs_i:
             coords_i, feat_i = func(coords_i, feat_i)
@@ -70,8 +48,8 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         return (coords_i, feat_i), (coords_j, feat_j)
 
     def augment_single(self, coords, feats):
-        funcs = [rotate, drop, shift_energy, translate]
-        funcs = np.random.choice(funcs, 2)
+        funcs = self.augs
+        funcs = np.random.choice(funcs, min(2, len(funcs)))
         for func in funcs:
             coords, feats = func(coords, feats)
         return coords, feats

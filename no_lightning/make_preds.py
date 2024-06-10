@@ -40,7 +40,8 @@ def main(args):
         model.eval()
 
     dataset = ThrowsDataset(
-        os.path.join(args.test_data_path, "test"), DataPrepType.CLASSIFICATION, train_mode=False
+        os.path.join(args.test_data_path, "test"), DataPrepType.CLASSIFICATION, [],
+        train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
     dataloader= DataLoader(
