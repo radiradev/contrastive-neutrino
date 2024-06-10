@@ -33,12 +33,12 @@ def main(args):
     network.eval()
 
     print(f"Finetuning with dataset from {args.finetune_data_path}")
+    dataprep = DataPrepType.CLASSIFICATION if args.no_augs else DataPrepType.CLASSIFICATION_AUG
     dataset_train = ThrowsDataset(
-        os.path.join(args.finetune_data_path, "train"), DataPrepType.CLASSIFICATION, conf.augs,
+        os.path.join(args.finetune_data_path, "train"), dataprep, conf.augs,
     )
     dataset_val = ThrowsDataset(
-        os.path.join(args.finetune_data_path, "val"), DataPrepType.CLASSIFICATION, conf.augs,
-        train_mode=False
+        os.path.join(args.finetune_data_path, "val"), dataprep, conf.augs, train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
     dataloader_train = DataLoader(
@@ -130,6 +130,7 @@ def parse_arguments():
 
     parser.add_argument("--pickle_model", action="store_true")
     parser.add_argument("--pickle_name", type=str, default="finetune_model_logreg")
+    parser.add_argument("--no_augs", action="store_true")
     parser.add_argument("--max_iter", type=int, default=120)
 
     args = parser.parse_args()
