@@ -21,7 +21,7 @@ apptainer exec --nv \
                --bind /share/ \
                /share/rcifdata/awilkins/images/rradev_minkowski_sandbox/ \
                python fine_tune_clr.py --pickle_model \
-                                       --max_iter 160 \
+                                       --max_iter 300 \
                                        $CONFIG_FILE \
                                        $NOMINAL_DATASET \
                                        ${CHKPT_PATH}/net_best_epoch*
