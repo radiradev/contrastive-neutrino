@@ -1,8 +1,10 @@
-import argparse, os
+import os
 
 import numpy as np
 from tqdm import tqdm
 import yaml
+import matplotlib # remove if using plt.show()
+matplotlib.use("pdf") # remove if using plt.show()
 from matplotlib import pyplot as plt
 
 from sklearn.metrics import accuracy_score
@@ -12,12 +14,11 @@ CHECKPOINT_DIR = "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints"
 CLASSIFIER = "classifier/classifier_nominal_batch672"
 CLRS = {
     "nominal" : "clr/clr_nominal_batch672",
-    # "electhrow1" : "clr/clr_electhrow1_batch672",
+    "electhrow1" : "clr/clr_electhrow1_batch672",
     "electhrow3" : "clr/clr_electhrow3_batch672"
 }
 
 def main():
-    models = [ "nominal classifier", "pretrained_clr" ]
     datasets = list(CLRS)
     nominal_accs, clr_accs = [], []
     for dataset in tqdm(datasets):
@@ -32,21 +33,24 @@ def main():
 
     x = np.arange(len(datasets))
     width = 0.25
-    mul = 0.0
+    spacing = 0.0
     fig, ax = plt.subplots()
-    for model_name, accs in zip(models, [nominal_accs, clr_accs]):
-        offset = width * mul
-        mul += 1
-        rects = ax.bar(x + offset, accs, width, label=model_name)
-        ax.bar_label(rects, padding=3)
+    rects1 = ax.bar(x - (width + spacing) / 2, nominal_accs, width, label="nominal classifier")
+    rects2 = ax.bar(x + (width + spacing) / 2, clr_accs, width, label="pretrained clr")
     ax.set_ylabel("Accuracy")
     ax.set_title("Pretrained CLR performance for different 'data' realisations")
-    ax.set_xticks(x + width, datasets)
-    ax.legend(loc='upper left', ncols=2)
+    ax.set_xticks(x)
+    ax.set_xticklabels(datasets)
     ax.set_ylim(0, 1)
+    ax.set_axisbelow(True)
+    ax.grid(axis='y')
+    ax.legend()
+    autolabel(rects1, ax)
+    autolabel(rects2, ax)
 
     fig.tight_layout()
     plt.savefig("pretrained_clr_acc.pdf")
+    plt.close()
     # plt.show()
 
 def get_acc(preds_path):
@@ -59,14 +63,17 @@ def get_acc(preds_path):
 
     return accuracy_score(pred_label, true_label)
 
-# def parse_arguments():
-#     parser = argparse.ArgumentParser()
-
-#     args = parser.parse_args()
-
-#     return args
+def autolabel(rects, ax):
+    for rect in rects:
+        height = rect.get_height()
+        ax.annotate(
+                f"{height:.3f}",
+            xy=(rect.get_x() + rect.get_width() / 2, height),
+            xytext=(0, 3),
+            textcoords="offset points",
+            ha='center',
+            va='bottom'
+        )
 
 if __name__ == "__main__":
-    # args = parse_arguments()
-    # main(args)
     main()
