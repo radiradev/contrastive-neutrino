@@ -16,7 +16,8 @@ NOTRAIN_CLR = "clr/clr_notrain"
 CLRS = {
     "nominal" : "clr/clr_nominal_batch672",
     "electhrow1" : "clr/clr_electhrow1_batch672",
-    "electhrow3" : "clr/clr_electhrow3_batch672"
+    "electhrow3" : "clr/clr_electhrow3_batch672",
+    "electhrow4" : "clr/clr_electhrow4_batch672"
 }
 
 def main():
@@ -74,7 +75,7 @@ def autolabel(rects, ax):
     for rect in rects:
         height = rect.get_height()
         ax.annotate(
-                f"{height:.3f}",
+            f"{height:.3f}",
             xy=(rect.get_x() + rect.get_width() / 2, height),
             xytext=(0, 3),
             textcoords="offset points",

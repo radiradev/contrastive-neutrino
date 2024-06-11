@@ -20,6 +20,12 @@ from dataset import ThrowsDataset, DataPrepType
 def main(args):
     print("Setting random seed to 123")
     torch.manual_seed(123)
+    # NOTE Gettting error:
+    # ...
+    #   feats_batch = torch.cat(feats_batch, 0)
+    # RuntimeError: Tensors must have same number of dimensions: got 2 and 1
+    # during dataloader collate for clr_electhrow3_batch672_Ebyvoxel only. Changing the random seed
+    # fixes it...
 
     conf = get_config(args.config)
     device = torch.device(conf.device)
