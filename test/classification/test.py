@@ -68,8 +68,9 @@ def wandb_models(model_names=None):
         ]
     print(f'Loading models: {model_names}')
     models = {
-        name: get_wandb_ckpt(f"rradev/model-registry/{name}") for name in model_names 
+        name: get_wandb_ckpt(f"rradev/model-registry/{name}") for name in model_names
     }
+    models['model-1rstc1ix:v186'] = get_wandb_ckpt('rradev/contrastive-neutrino2/model-1rstc1ix:v186')
     return models
 
 def load_clr_model(ckpt_path, name):
@@ -117,7 +118,7 @@ def evaluate_models(models, throw, throw_type):
         if 'classifier' in model_name:
             preds, labels = classifier_predict(loader, models[model_name])
         
-        if 'contrastive' in model_name:
+        if 'contrastive' in model_name or 'model-1rstc1ix' in model_name:
             preds, labels = sim_clr_predict(loader, models[model_name])
 
         print(labels.shape, preds.shape)

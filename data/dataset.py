@@ -87,7 +87,8 @@ class ClassifierAugmentedDataset(torchvision.datasets.DatasetFolder):
     def __getitem__(self, index: int):
         path, label = self.samples[index]
         sample = self.loader(path)
-        coords, feats = sample['coordinates'], sample['adc']
+        coords =torch.tensor(sample['coordinates'], dtype=torch.float)
+        feats = torch.tensor(np.expand_dims(sample['adc'], axis=1), dtype=torch.float)
         
         if self.train_mode:
             coords, feats = self.augment_single(coords, feats)

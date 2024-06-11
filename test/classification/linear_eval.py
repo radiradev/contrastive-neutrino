@@ -81,8 +81,8 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
         A tuple containing the trained logistic regression model, balanced accuracy score, and accuracy score.
     """
     # clf = LogisticRegression(use_gpu=True, verbose=True)
-    clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
-    #clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
+    #clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
+    clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
     X = train_feats_simclr.tensors[0].numpy()
     y = train_feats_simclr.tensors[1].numpy()
 
