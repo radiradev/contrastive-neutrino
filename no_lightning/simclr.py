@@ -15,7 +15,7 @@ class SimCLR(nn.Module):
 
         self.net = VoxelConvNeXtCLR(in_chans=1, D=3, dims=conf.net_dims).to(self.device)
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
 
         self.criterion = contrastive_loss

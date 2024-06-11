@@ -19,7 +19,7 @@ class Classifier(nn.Module):
         self.net = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=self.num_classes)
         self.net.to(self.device)
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
 
         self.criterion = nn.CrossEntropyLoss()

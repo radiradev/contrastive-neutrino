@@ -15,7 +15,8 @@ defaults = {
     "augs" : ["rotate", "drop", "shift_energy_uniform", "translate"],
     "n_augs" : 2,
     "data_path_s" : None,
-    "alpha" : 1.0
+    "alpha" : 1.0,
+    "lr" : 1e-4
 }
 
 mandatory_fields = {
