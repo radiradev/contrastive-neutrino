@@ -80,7 +80,7 @@ class DANN(nn.Module):
         self.revgrad = ReverseLayerF
         self.alpha = conf.alpha
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
 
         self.criterion_label = nn.CrossEntropyLoss()
