@@ -13,7 +13,9 @@ defaults = {
     "save_model" : "never",
     "net_dims" : [96, 192, 384, 768],
     "augs" : ["rotate", "drop", "shift_energy_uniform", "translate"],
-    "n_augs" : 2
+    "n_augs" : 2,
+    "data_path_s" : None,
+    "alpha" : 1.0
 }
 
 mandatory_fields = {
@@ -62,6 +64,9 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
                 conf_dict["save_model"]
             )
         )
+
+    if conf_dict["model"] == "dann" and conf_dict["data_path_s"] is None:
+        raise ValueError("dann models must specifiy source data 'data_path_s'")
 
     if prep_checkpoint_dir:
         conf_dict["checkpoint_dir"] = os.path.join(conf_dict["checkpoints_dir"], conf_dict["name"])

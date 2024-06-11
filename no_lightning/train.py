@@ -9,6 +9,7 @@ import MinkowskiEngine as ME
 from config_parser import get_config
 from simclr import SimCLR
 from classifier import Classifier
+from dann import DANN
 from dataset import ThrowsDataset, DataPrepType
 from data_utils import clr_sparse_collate
 
@@ -19,40 +20,18 @@ def main(args):
         model = SimCLR(conf)
     elif conf.model == "classifier":
         model = Classifier(conf)
+    elif conf.model == "dann":
+        model = DANN(conf)
     else:
-        raise ValueError("model must be ['sim_clr', 'classifier']")
+        raise ValueError("model must be ['sim_clr', 'classifier', 'dann']")
 
-    dataset_train = ThrowsDataset(
-        os.path.join(conf.data_path, "train"), conf.data_prep_type, conf.augs, conf.n_augs
-    )
-    if conf.data_prep_type == DataPrepType.CLASSIFICATION_AUG:
-        val_data_prep_type = DataPrepType.CLASSIFICATION
-    else:
-        val_data_prep_type = conf.data_prep_type
-    dataset_val = ThrowsDataset(
-        os.path.join(conf.data_path, "val"), val_data_prep_type, conf.augs, conf.n_augs,
-        train_mode=False
-    )
-    if conf.data_prep_type == DataPrepType.CLASSIFICATION:
-        collate_fn = ME.utils.batch_sparse_collate
-    else:
-        collate_fn = clr_sparse_collate
-    dataloader_train = DataLoader(
-        dataset_train,
-        batch_size=conf.batch_size,
-        shuffle=True,
-        collate_fn=collate_fn,
-        num_workers=min(conf.max_num_workers, conf.batch_size),
-        drop_last=True
-    )
-    dataloader_val = DataLoader(
-        dataset_val,
-        batch_size=conf.batch_size,
-        shuffle=True,
-        collate_fn=collate_fn,
-        num_workers=min(conf.max_num_workers, conf.batch_size),
-        drop_last=True
-    )
+    _, dataloader_train, _, dataloader_val = get_dataloaders(conf.data_path, conf)
+    train_n_batches = len(dataloader_train)
+    val_n_batches = len(dataloader_val)
+    if conf.model == "dann":
+        _, dataloader_train_s, _, dataloader_val_s = get_dataloaders(conf.data_path_s, conf)
+        train_n_batches = min(train_n_batches, len(dataloader_train_s))
+        val_n_batches = min(val_n_batches, len(dataloader_val_s))
 
     t0 = time.time()
     losses = []
@@ -65,15 +44,18 @@ def main(args):
         model.save_network("notrain")
         return
 
-    write_log_str(conf.checkpoint_dir, "Iters per epoch: {}".format(len(dataloader_train)))
+    write_log_str(conf.checkpoint_dir, "Iters per epoch: {}".format(train_n_batches))
 
     for epoch in range(conf.epochs):
         write_log_str(conf.checkpoint_dir, "==== Epoch {} ====".format(epoch))
 
         # Train loop
         model.train()
-        dataloader_train_iter = iter(dataloader_train)
-        for n_iter_epoch in range(len(dataloader_train)):
+        if conf.model == "dann":
+            dataloader_train_iter = zip(dataloader_train_s, dataloader_train)
+        else:
+            dataloader_train_iter = iter(dataloader_train)
+        for n_iter_epoch in range(train_n_batches):
             try:
                 data = next(dataloader_train_iter)
             except RuntimeError as e:
@@ -81,7 +63,10 @@ def main(args):
                 n_iter += 1
                 continue
 
-            model.set_input(data)
+            if conf.model == "dann":
+                model.set_input(data[0], data[1])
+            else:
+                model.set_input(data)
             try:
                 model.optimize_parameters()
             except RuntimeError as e:
@@ -130,15 +115,21 @@ def main(args):
         # Validation loop
         model.eval()
         write_log_str(conf.checkpoint_dir, "== Validation Loop ==")
-        dataloader_val_iter = iter(dataloader_val)
-        for n_iter_epoch in range(len(dataloader_val)):
+        if conf.model == "dann":
+            dataloader_val_iter = zip(dataloader_val_s, dataloader_val)
+        else:
+            dataloader_val_iter = iter(dataloader_val)
+        for n_iter_epoch in range(val_n_batches):
             try:
                 data = next(dataloader_val_iter)
             except RuntimeError as e:
                 print(f"RunTimeError! {e}")
                 continue
 
-            model.set_input(data)
+            if conf.model == "dann":
+                model.set_input(data[0], data[1])
+            else:
+                model.set_input(data)
             try:
                 model.test(compute_loss=True)
             except RuntimeError as e:
@@ -148,7 +139,7 @@ def main(args):
             losses_val.append(model.get_current_loss())
 
         loss_str = (
-            "Validation with {} images:\n".format(len(dataset_val)) +
+            "Validation with {} images:\n".format(len(dataloader_val.dataset)) +
             "Losses: total={:.7f}".format(np.mean(losses_val))
         )
         write_log_str(conf.checkpoint_dir, loss_str)
@@ -180,6 +171,40 @@ def get_print_str(epoch, losses, n_iter, n_iter_tot, t_iter):
         "Losses: total={:.7f}".format(np.mean(losses))
     )
 
+def get_dataloaders(data_path, conf):
+    dataset_train = ThrowsDataset(
+        os.path.join(data_path, "train"), conf.data_prep_type, conf.augs, conf.n_augs
+    )
+    if conf.data_prep_type == DataPrepType.CLASSIFICATION_AUG:
+        val_data_prep_type = DataPrepType.CLASSIFICATION
+    else:
+        val_data_prep_type = conf.data_prep_type
+    dataset_val = ThrowsDataset(
+        os.path.join(data_path, "val"), val_data_prep_type, conf.augs, conf.n_augs,
+        train_mode=False
+    )
+    if conf.data_prep_type == DataPrepType.CLASSIFICATION:
+        collate_fn = ME.utils.batch_sparse_collate
+    else:
+        collate_fn = clr_sparse_collate
+    dataloader_train = DataLoader(
+        dataset_train,
+        batch_size=conf.batch_size,
+        shuffle=True,
+        collate_fn=collate_fn,
+        num_workers=min(conf.max_num_workers, conf.batch_size),
+        drop_last=True
+    )
+    dataloader_val = DataLoader(
+        dataset_val,
+        batch_size=conf.batch_size,
+        shuffle=True,
+        collate_fn=collate_fn,
+        num_workers=min(conf.max_num_workers, conf.batch_size),
+        drop_last=True
+    )
+    return dataset_train, dataloader_train, dataset_val, dataloader_val
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
@@ -198,10 +223,3 @@ def parse_arguments():
 if __name__ == "__main__":
     args = parse_arguments()
     main(args)
-
-
-
-
-
-
-
