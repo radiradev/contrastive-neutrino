@@ -22,7 +22,7 @@ class Classifier(nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss()
 
         self.loss = None
 
