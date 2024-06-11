@@ -41,10 +41,11 @@ def main(args):
     print(f"Finetuning with dataset from {args.finetune_data_path}")
     dataprep = DataPrepType.CLASSIFICATION if args.no_augs else DataPrepType.CLASSIFICATION_AUG
     dataset_train = ThrowsDataset(
-        os.path.join(args.finetune_data_path, "train"), dataprep, conf.augs,
+        os.path.join(args.finetune_data_path, "train"), dataprep, conf.augs, conf.n_augs
     )
     dataset_val = ThrowsDataset(
-        os.path.join(args.finetune_data_path, "val"), dataprep, conf.augs, train_mode=False
+        os.path.join(args.finetune_data_path, "val"), dataprep, conf.augs, conf.n_augs,
+        train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
     dataloader_train = DataLoader(

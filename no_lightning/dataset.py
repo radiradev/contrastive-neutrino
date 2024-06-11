@@ -11,11 +11,12 @@ from MinkowskiEngine.utils import sparse_quantize
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     quantization_size = 0.38
 
-    def __init__(self, dataroot, dataset_type, augs, extensions='.npz', train_mode=True):
+    def __init__(self, dataroot, dataset_type, augs, n_augs, extensions='.npz', train_mode=True):
         super().__init__(root=dataroot, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
         self.train_mode = train_mode
         self.augs = augs
+        self.n_augs = min(n_augs, len(self.augs))
 
         self.index_history = deque(self.__len__() * [0], self.__len__())
 
@@ -29,8 +30,8 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         coords_j, feat_j = xj
 
         # draw functions and augment i
-        funcs_i = np.random.choice(funcs, min(2, len(funcs)))
-        funcs_j = np.random.choice(funcs, min(2, len(funcs)))
+        funcs_i = np.random.choice(funcs, self.n_augs)
+        funcs_j = np.random.choice(funcs, self.n_augs)
 
         for func in funcs_i:
             coords_i, feat_i = func(coords_i, feat_i)
@@ -49,7 +50,7 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
 
     def augment_single(self, coords, feats):
         funcs = self.augs
-        funcs = np.random.choice(funcs, min(2, len(funcs)))
+        funcs = np.random.choice(funcs, self.n_augs)
         for func in funcs:
             coords, feats = func(coords, feats)
         return coords, feats
