@@ -5,16 +5,11 @@ import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
 from modules.loss import contrastive_loss, NT_Xent, SigLipLoss, nt_xent_loss
 from models.voxel_convnext import VoxelConvNeXtCLR
-from models.resnet import ResnetCLR
 import math
 import prodigyopt
 
 class SimCLR(pl.LightningModule):
     def __init__(self, batch_size=None):
-        if batch_size is None:
-            batch_size = None
-            #raise ValueError("batch_size must be specified")
-        
         super().__init__()
         self.model = VoxelConvNeXtCLR(in_chans=1, D=3)
         self.criterion = nt_xent_loss

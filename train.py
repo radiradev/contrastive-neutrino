@@ -26,7 +26,7 @@ checkpoint_callback = pl.callbacks.ModelCheckpoint(
 
 def dataloaders(batch_size: int, train_dataset, val_dataset, collate_fn, num_workers=64, pin_memory=True):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers, drop_last=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=num_workers,drop_last=True)
     return train_loader, val_dataloader
 
 @hydra.main(version_base="1.3", config_path="configs", config_name=None)

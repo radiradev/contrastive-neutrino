@@ -1,11 +1,11 @@
 data_path: /pscratch/sd/r/rradev/larndsim_throws_converted_jun7
 
 train_dataset:
-  _target_: data.dataset.ContrastiveAugmentationsThrowsDataset
+  _target_: data.dataset.ContrastiveThrowsAugmentationsDataset
   root: ${data_path}/train/
 
 val_dataset:
-  _target_: data.dataset.ContrastiveAugmentationsThrowsDataset
+  _target_: data.dataset.ContrastiveThrowsAugmentationsDataset
   root: ${data_path}/val/
 
 model: 

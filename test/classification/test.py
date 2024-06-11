@@ -9,7 +9,7 @@ import datetime
 from torch.utils import data
 from modules.classifier import Classifier
 from modules.simclr import SimCLR
-from data.dataset import ThrowsDataset
+from data.dataset import ClassifierBaseDataset
 from torch import nn
 from sklearn.metrics import balanced_accuracy_score, accuracy_score
 from MinkowskiEngine.utils import batch_sparse_collate
@@ -20,7 +20,7 @@ import numpy as np
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 NUM_WORKERS = 12 
-config = load_yaml('config/config.yaml')
+config = load_yaml('configs/config.yaml')
 
 def classifier_predict(loader, model):
     preds, labels = [], []
@@ -61,11 +61,10 @@ def wandb_models(model_names=None):
     the wandb registry"""
     if model_names is None:
         model_names = [
-            'contrastive-model-augmentations-and-throws:v1',
-            #'contrastive-augmentations:v3',
-            'classifier-augmentations-throws:v0',
-            'classifier-augmentations:v0',
-            'classifier-nominal-only:v0'
+            'contrastive-augmentations:v4',
+        #     'classifier-augmentations-throws:v0',
+        #     'classifier-augmentations:v0',
+             'classifier-nominal-only:v1'
         ]
     print(f'Loading models: {model_names}')
     models = {
@@ -108,25 +107,23 @@ def load_models(model_names=None):
 
 def evaluate_models(models, throw, throw_type):
     data_path = os.path.join(config['data'][throw_type],'larndsim_converted', throw) 
-               
-    sample_size = 1792 # batch_size * 7 not all events present in the larnd data
+    dataset = ClassifierBaseDataset(data_path)
+    loader = data.DataLoader(dataset, batch_size=256, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True)    
+
     results = {}
+
+    dataset = ClassifierBaseDataset(data_path)
     for model_name in models.keys():
         if 'classifier' in model_name:
-            dataset = ThrowsDataset(dataset_type='single_particle', root=data_path, feature='adc')
-            loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)   
             preds, labels = classifier_predict(loader, models[model_name])
-            del dataset
-        else:
-            dataset = ThrowsDataset(dataset_type='single_particle', root=data_path, feature='adc')
-            loader = data.DataLoader(dataset, batch_size=512, collate_fn=batch_sparse_collate, num_workers=12, drop_last=True, shuffle=True)  
+        
+        if 'contrastive' in model_name:
             preds, labels = sim_clr_predict(loader, models[model_name])
-            del dataset
+
         print(labels.shape, preds.shape)
         acc = accuracy_score(labels, preds.argmax(axis=1))
         bacc = balanced_accuracy_score(labels, preds.argmax(axis=1))
         print(f'{throw}_{model_name} accuracy: {acc}')
-        print(f'{model_name} balanced accuracy: {bacc}')
         results[model_name] = {
             'preds': preds,
             'labels': labels

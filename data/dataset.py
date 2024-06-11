@@ -52,8 +52,8 @@ def contrastive_augmentations(xi, xj, quantization_size=0.38):
 
     return (coords_i, feat_i), (coords_j, feat_j) 
 
-
 class ClassifierBaseDataset(torchvision.datasets.DatasetFolder):
+    quantization_size = 0.38
     def __init__(self, root, extensions='.npz'):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
 
@@ -64,11 +64,12 @@ class ClassifierBaseDataset(torchvision.datasets.DatasetFolder):
         path, label = self.samples[index]
         sample = self.loader(path)
         coords, feats = sample['coordinates'], sample['adc']
-        coords, feats = sparse_quantize(torch.tensor(coords, dtype=torch.float), torch.tensor(np.expand_dims(feats, axis=1), dtype=torch.float), quantization_size=self.quantization_size)
+        coords, feats = sparse_quantize(coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size)
         return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
 
 class ClassifierAugmentedDataset(torchvision.datasets.DatasetFolder):
+    quantization_size = 0.38
     def __init__(self, train_mode, root, extensions='.npz'):
         super().__init__(root=root, extensions=extensions, loader=self.loader)
         self.train_mode = train_mode
@@ -86,9 +87,7 @@ class ClassifierAugmentedDataset(torchvision.datasets.DatasetFolder):
     def __getitem__(self, index: int):
         path, label = self.samples[index]
         sample = self.loader(path)
-        
         coords, feats = sample['coordinates'], sample['adc']
-        coords, feats = torch.tensor(coords, dtype=torch.float), torch.tensor(np.expand_dims(feats, axis=1), dtype=torch.float32)
         
         if self.train_mode:
             coords, feats = self.augment_single(coords, feats)

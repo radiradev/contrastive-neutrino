@@ -7,7 +7,7 @@ from utils.data import load_yaml
 from torch.utils import data
 from tqdm import tqdm
 from modules.simclr import SimCLR
-from data.dataset import ThrowsDataset
+from data.dataset import ClassifierBaseDataset
 from torch import nn
 from sklearn.utils import shuffle
 from sklearn.linear_model import LogisticRegression as skLogisticRegression
@@ -23,7 +23,7 @@ import pickle
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 NUM_WORKERS = 12 
-config = load_yaml('config/config.yaml')
+config = load_yaml('configs/config.yaml')
 
 @torch.no_grad()
 def prepare_data_features(sim_clr, dataset, filename, drop_mlp=True, reset_features=True):
@@ -81,8 +81,8 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
         A tuple containing the trained logistic regression model, balanced accuracy score, and accuracy score.
     """
     # clf = LogisticRegression(use_gpu=True, verbose=True)
-    # clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
-    clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
+    clf = skLogisticRegression(verbose=True, solver='saga', max_iter=100, n_jobs=128)
+    #clf = HistGradientBoostingClassifier(max_iter=500, max_depth=100, verbose=1)
     X = train_feats_simclr.tensors[0].numpy()
     y = train_feats_simclr.tensors[1].numpy()
 
@@ -104,8 +104,8 @@ def train_linear_model(train_feats_simclr, test_feats_simclr, identifier):
 
 def evaluate(wandb_artifact=None):
     dataset_type = 'single_particle'
-    train_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'))
-    test_dataset = ThrowsDataset(dataset_type, os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'test'))
+    train_dataset = ClassifierBaseDataset(os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'train'))
+    test_dataset = ClassifierBaseDataset(os.path.join(os.path.dirname(config['data']['data_path']), 'larndsim_throws_converted_nominal', 'test'))
 
     if wandb_artifact is None:
         print('Using a randomly initialized model as baseline')

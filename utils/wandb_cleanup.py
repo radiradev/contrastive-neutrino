@@ -15,7 +15,7 @@ set dry_run == False to delete...
 def clean():
     parser = argparse.ArgumentParser()
     parser.add_argument('--userid', type=str, default='rradev')
-    parser.add_argument('--project_name', type=str, default='contrastive-neutrino')
+    parser.add_argument('--project_name', type=str, default='contrastive-neutrino2')
     parser.add_argument('--delete', action='store_true', default=False)
     args = parser.parse_args()
     api = wandb.Api(overrides={"project": args.project_name, "entity": args.userid})

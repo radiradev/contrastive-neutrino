@@ -1,5 +1,4 @@
 import torch
-from models.resnet import ResNet34
 from models.voxel_convnext import VoxelConvNeXtClassifier
 import pytorch_lightning as pl
 from MinkowskiEngine import SparseTensor
@@ -10,9 +9,6 @@ import prodigyopt
 
 class Classifier(pl.LightningModule):
     def __init__(self, batch_size=None, device='cuda', num_classes=5):
-        if batch_size is None:
-            raise ValueError("batch_size must be specified")
-        
         super().__init__()
         self.model = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=num_classes).to(device)
         self.loss = torch.nn.CrossEntropyLoss()
@@ -90,6 +86,5 @@ class Classifier(pl.LightningModule):
         self.log("val/loss_best", self.val_loss_best.compute(), sync_dist=True, prog_bar=True)
 
     def configure_optimizers(self):
-        optimizer = prodigyopt.Prodigy(self.parameters())
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
         return optimizer
-
