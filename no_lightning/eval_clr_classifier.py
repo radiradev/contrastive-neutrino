@@ -41,7 +41,7 @@ def main(args):
     model_classifier.eval()
 
     dataset = ThrowsDataset(
-        os.path.join(args.test_data_path, "test"), DataPrepType.CLASSIFICATION, [],
+        os.path.join(args.test_data_path, "test"), DataPrepType.CLASSIFICATION, [], 0,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate

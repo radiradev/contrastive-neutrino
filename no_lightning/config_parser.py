@@ -12,7 +12,8 @@ defaults = {
     "lr_decay_iter" : 0,
     "save_model" : "never",
     "net_dims" : [96, 192, 384, 768],
-    "augs" : ["rotate", "drop", "shift_energy_uniform", "translate"]
+    "augs" : ["rotate", "drop", "shift_energy_uniform", "translate"],
+    "n_augs" : 2
 }
 
 mandatory_fields = {

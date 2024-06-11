@@ -23,14 +23,15 @@ def main(args):
         raise ValueError("model must be ['sim_clr', 'classifier']")
 
     dataset_train = ThrowsDataset(
-        os.path.join(conf.data_path, "train"), conf.data_prep_type, conf.augs
+        os.path.join(conf.data_path, "train"), conf.data_prep_type, conf.augs, conf.n_augs
     )
     if conf.data_prep_type == DataPrepType.CLASSIFICATION_AUG:
         val_data_prep_type = DataPrepType.CLASSIFICATION
     else:
         val_data_prep_type = conf.data_prep_type
     dataset_val = ThrowsDataset(
-        os.path.join(conf.data_path, "val"), val_data_prep_type, conf.augs, train_mode=False
+        os.path.join(conf.data_path, "val"), val_data_prep_type, conf.augs, conf.n_augs,
+        train_mode=False
     )
     if conf.data_prep_type == DataPrepType.CLASSIFICATION:
         collate_fn = ME.utils.batch_sparse_collate

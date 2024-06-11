@@ -13,8 +13,8 @@ def drop(coords, feats, p=0.1):
         return coords, feats
     return coords[mask], feats[mask]
 
-def shift_energy_normal(coords, feats, max_scale_factor=0.1):
-    shift = 1 - torch.randn(1, dtype=feats.dtype, device=feats.device) * max_scale_factor
+def shift_energy_normal(coords, feats, scale_factor=0.1):
+    shift = 1 - torch.randn(1, dtype=feats.dtype, device=feats.device) * scale_factor
     return coords, feats * shift
 
 def shift_energy_uniform(coords, feats, max_scale_factor=0.1):
@@ -30,6 +30,11 @@ def translate(coords, feats, cube_size=512):
     translation = normalized_shift * (cube_size / 10)
     return coords + translation, feats
 
+def translate_byvoxel(coords, feats, scale_factor=0.3):
+    shift = torch.randn_like(coords, dtype=coords.dtype, device=coords.device)
+    translation = shift * scale_factor
+    return coords + translation, feats
+
 def identity(coords, feats):
     return coords, feats
 
@@ -40,5 +45,6 @@ aug_funcs = {
     "shift_energy_uniform" : shift_energy_uniform,
     "shift_energy_byvoxel" : shift_energy_byvoxel,
     "translate" : translate,
+    "translate_byvoxel" : translate_byvoxel,
     "identity" : identity
 }
