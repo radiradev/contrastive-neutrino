@@ -1,0 +1,14 @@
+name: "classifier_nominal_aug_batch672_lrdecay"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
+data_prep_type: "classification_augmentations"
+max_num_workers: 12
+
+model: "classifier"
+save_model: "all"
+
+batch_size: 672
+epochs: 40
+lr_decay_iter: 400 # ~ 2 epochs
+
