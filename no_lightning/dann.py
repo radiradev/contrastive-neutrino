@@ -100,6 +100,7 @@ class DANN(nn.Module):
         self.target_domain_t = None
 
     def set_input(self, data_s, data_t):
+        self._reset_data()
         self.data_s, self.data_t = data_s, data_t
         coords, feats, labels = data_s
         self.target_label_s = labels.to(self.device)
@@ -112,6 +113,15 @@ class DANN(nn.Module):
             labels, dtype=labels.dtype, device=self.device
         )
         self.s_in_t = ME.SparseTensor(
+            coordinates=coords, features=feats.float(), device=self.device
+        )
+
+    def set_input_test(self, data):
+        self._reset_data()
+        self.data_s = data
+        coords, feats, labels = data
+        self.target_label_s = labels.to(self.device)
+        self.s_in_s= ME.SparseTensor(
             coordinates=coords, features=feats.float(), device=self.device
         )
 
@@ -148,8 +158,8 @@ class DANN(nn.Module):
             if hasattr(state_dicts[name], "_metadata"):
                 del state_dicts [name]._metadata
         self.net.load_state_dict(state_dicts["net_state_dict"])
-        self.net.load_state_dict(state_dicts["net_label_state_dict"])
-        self.net.load_state_dict(state_dicts["net_domain_state_dict"])
+        self.net_label.load_state_dict(state_dicts["net_label_state_dict"])
+        self.net_domain.load_state_dict(state_dicts["net_domain_state_dict"])
 
     def get_current_visuals(self):
         return {
@@ -175,14 +185,16 @@ class DANN(nn.Module):
         rev_featvec = self.revgrad.apply(featvec, self.alpha)
         self.pred_domain_t = self.net_domain(rev_featvec)
 
+    def forward_test(self):
+        featvec = self.net(self.s_in_s)
+        self.pred_label_s = self.net_label(featvec)
+
     def test(self, compute_loss=True):
         with torch.no_grad():
-            self.forward()
+            self.forward_test()
             if compute_loss:
                 loss_label_s = self.criterion_label(self.pred_label_s, self.target_label_s)
-                loss_domain_s = self.criterion_domain(self.pred_domain_s, self.target_domain_s)
-                loss_domain_t = self.criterion_domain(self.pred_domain_t, self.target_domain_t)
-                self.loss = loss_label_s + loss_domain_s + loss_domain_t
+                self.loss = loss_label_s
 
     def optimize_parameters(self):
         self.forward()
@@ -194,3 +206,15 @@ class DANN(nn.Module):
         self.loss = loss_label_s + loss_domain_s + loss_domain_t
         self.loss.backward()
         self.optimizer.step()
+
+    def _reset_data(self):
+        self.data_s = None
+        self.s_in_s = None
+        self.pred_label_s = None
+        self.target_label_s = None
+        self.pred_domain_s = None
+        self.target_domain_s = None
+        self.data_t = None
+        self.s_in_t = None
+        self.pred_domain_t = None
+        self.target_domain_t = None

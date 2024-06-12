@@ -13,6 +13,7 @@ from sklearn.utils import shuffle
 
 from config_parser import get_config
 from simclr import SimCLR
+from dann import DANN
 from classifier import Classifier
 from dataset import ThrowsDataset, DataPrepType
 
@@ -35,8 +36,11 @@ def main(args):
     with open(args.finetune_pickle, "rb") as f:
         clf, scaler = pickle.load(f)
 
-    print(f"Loading classifier model from {args.classifier_weights}")
-    model_classifier = Classifier(conf_classifier)
+    clf_name = "DANN" if args.classifier_is_dann else "classifier"
+    print(f"Loading {clf_name} model from {args.classifier_weights}")
+    model_classifier = (
+        DANN(conf_classifier) if args.classifier_is_dann else Classifier(conf_classifier)
+    )
     model_classifier.load_network(args.classifier_weights)
     model_classifier.eval()
 
@@ -75,14 +79,22 @@ def main(args):
     y_pred_clr = clf.predict(scaler.transform(test_x))
     y_target_clr = test_y
 
-    print("Getting classifier predictions...")
+    print(f"Getting {clf_name} predictions...")
+    pred_key, target_key = (
+        ("pred_label_s", "target_label_s")
+        if args.classifier_is_dann
+        else ("pred_out", "target_out")
+    )
     y_pred_classifier, y_target_classifier = [], []
     for data in tqdm(dataloader):
-        model_classifier.set_input(data)
+        if args.classifier_is_dann:
+            model_classifier.set_input_test(data)
+        else:
+            model_classifier.set_input(data)
         model_classifier.test(compute_loss=False)
         vis = model_classifier.get_current_visuals()
-        y_pred_classifier.append(vis["pred_out"].argmax(axis=1))
-        y_target_classifier.append(vis["target_out"])
+        y_pred_classifier.append(vis[pred_key].argmax(axis=1))
+        y_target_classifier.append(vis[target_key])
     y_pred_classifier = torch.cat(y_pred_classifier).detach().cpu().numpy()
     y_target_classifier = torch.cat(y_target_classifier).detach().cpu().numpy()
 
@@ -90,7 +102,7 @@ def main(args):
     acc_score_classifier = accuracy_score(y_pred_classifier, y_target_classifier)
 
     print(f"Finetuned CLR accuracy score: {acc_score_clr}")
-    print(f"Classifier accuracy score: {acc_score_classifier}")
+    print(f"{clf_name} accuracy score: {acc_score_classifier}")
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -101,6 +113,8 @@ def parse_arguments():
     parser.add_argument("finetune_pickle")
     parser.add_argument("classifier_weights")
     parser.add_argument("test_data_path")
+
+    parser.add_argument("--classifier_is_dann", action="store_true")
 
     args = parser.parse_args()
 
