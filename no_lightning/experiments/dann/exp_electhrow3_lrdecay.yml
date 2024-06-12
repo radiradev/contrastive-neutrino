@@ -1,0 +1,14 @@
+name: "dann_electhrow3_lrdecay"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/dann"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw3"
+data_path_s: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
+data_prep_type: "classification"
+max_num_workers: 12
+
+model: "dann"
+save_model: "best"
+
+batch_size: 672
+epochs: 120
+lr_decay_iter: 800 # ~ 4 epochs
