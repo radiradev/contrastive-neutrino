@@ -13,6 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from config_parser import get_config
 from simclr import SimCLR
 from classifier import Classifier
+from dann import DANN
 from dataset import ThrowsDataset, DataPrepType
 
 def main(args):
@@ -33,9 +34,14 @@ def main(args):
         print(f"Loading finetune model from {args.finetune_pickle}")
         with open(args.finetune_pickle, "rb") as f:
             clf, scaler = pickle.load(f)
-    else:
+    elif args.classifier:
         print(f"Loading classifier model from {args.weights}")
         model = Classifier(conf)
+        model.load_network(args.weights)
+        model.eval()
+    else:
+        print(f"Loading DANN model from {args.weights}")
+        model = DANN(conf)
         model.load_network(args.weights)
         model.eval()
 
@@ -73,7 +79,7 @@ def main(args):
         test_y = finetune_test_data.tensors[1].numpy()
         y_pred = clf.predict_proba(scaler.transform(test_x))
         y_target = test_y
-    else:
+    elif args.classifier:
         print("Getting classifier predictions...")
         y_pred_classifier, y_target_classifier = [], []
         for data in tqdm(dataloader):
@@ -82,6 +88,17 @@ def main(args):
             vis = model.get_current_visuals()
             y_pred_classifier.append(vis["pred_out"])
             y_target_classifier.append(vis["target_out"])
+        y_pred = torch.cat(y_pred_classifier).detach().cpu().numpy()
+        y_target = torch.cat(y_target_classifier).detach().cpu().numpy()
+    elif args.dann:
+        print("Getting classifier predictions...")
+        y_pred_classifier, y_target_classifier = [], []
+        for data in tqdm(dataloader):
+            model.set_input_test(data)
+            model.test(compute_loss=False)
+            vis = model.get_current_visuals()
+            y_pred_classifier.append(vis["pred_label_s"])
+            y_target_classifier.append(vis["target_label_s"])
         y_pred = torch.cat(y_pred_classifier).detach().cpu().numpy()
         y_target = torch.cat(y_target_classifier).detach().cpu().numpy()
 
@@ -109,13 +126,14 @@ def parse_arguments():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--classifier", action="store_true")
     group.add_argument("--clr", action="store_true")
+    group.add_argument("--dann", action="store_true")
 
     parser.add_argument("--finetune_pickle", type=str, default=None)
 
     args = parser.parse_args()
 
-    if not args.classifier and not args.clr:
-        raise ValueError("Specify --classifier or --clr")
+    if not args.classifier and not args.clr and not args.dann:
+        raise ValueError("Specify --classifier | --clr | --dann")
     if args.clr and args.finetune_pickle is None:
         raise ValueError("Specify --finetune_pickle to make clr predictions with")
 

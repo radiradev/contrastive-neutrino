@@ -19,10 +19,16 @@ CLRS = {
     "electhrow3" : "clr/clr_electhrow3_batch672",
     "electhrow4" : "clr/clr_electhrow4_batch672"
 }
+DANNS = {
+    "nominal" : "dann/dann_nominal",
+    "electhrow1" : "dann/dann_electhrow1",
+    "electhrow3" : "dann/dann_electhrow3",
+    "electhrow4" : "dann/dann_electhrow4"
+}
 
 def main():
     datasets = list(CLRS)
-    nominal_accs, clr_accs, notrain_clr_accs = [], [], []
+    nominal_accs, clr_accs, notrain_clr_accs, dann_accs = [], [], [], []
     for dataset in tqdm(datasets):
         clf_preds_path = os.path.join(
             CHECKPOINT_DIR, CLASSIFIER, "test_results", f"preds_{dataset}.yml"
@@ -36,14 +42,19 @@ def main():
             CHECKPOINT_DIR, NOTRAIN_CLR, "test_results", f"preds_{dataset}.yml"
         )
         notrain_clr_accs.append(get_acc(notrain_clr_preds_path))
+        dann_preds_path = os.path.join(
+            CHECKPOINT_DIR, DANNS[dataset], "test_results", f"preds_{dataset}.yml"
+        )
+        dann_accs.append(get_acc(dann_preds_path))
 
     x = np.arange(len(datasets))
     width = 0.2
     spacing = 0.0
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - (width + spacing), nominal_accs, width, label="nominal classifier")
-    rects2 = ax.bar(x, clr_accs, width, label="pretrained clr")
-    rects3 = ax.bar(x + (width + spacing), notrain_clr_accs, width, label="random clr")
+    rects1 = ax.bar(x - (width + spacing) * 1.5, nominal_accs, width, label="nominal classifier")
+    rects2 = ax.bar(x - (width + spacing) * 0.5, clr_accs, width, label="pretrained clr")
+    rects3 = ax.bar(x + (width + spacing) * 0.5, notrain_clr_accs, width, label="DANN")
+    rects4 = ax.bar(x + (width + spacing) * 1.5, notrain_clr_accs, width, label="random clr")
     ax.set_ylabel("Accuracy")
     ax.set_title("Pretrained CLR performance for different 'data' realisations")
     ax.set_xticks(x)
@@ -55,6 +66,7 @@ def main():
     autolabel(rects1, ax)
     autolabel(rects2, ax)
     autolabel(rects3, ax)
+    autolabel(rects4, ax)
 
     fig.tight_layout()
     plt.savefig("pretrained_clr_acc.pdf")
@@ -81,7 +93,7 @@ def autolabel(rects, ax):
             textcoords="offset points",
             ha='center',
             va='bottom',
-            fontsize=8
+            fontsize=6
         )
 
 if __name__ == "__main__":
