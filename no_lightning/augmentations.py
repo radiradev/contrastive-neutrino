@@ -1,3 +1,5 @@
+from functools import partial
+
 import torch
 
 from rotation_conversions import random_rotation
@@ -17,12 +19,12 @@ def shift_energy_normal(coords, feats, scale_factor=0.1):
     shift = 1 - torch.randn(1, dtype=feats.dtype, device=feats.device) * scale_factor
     return coords, feats * shift
 
-def shift_energy_uniform(coords, feats, max_scale_factor=0.1):
-    shift = 1 - torch.rand(1, dtype=feats.dtype, device=feats.device) * max_scale_factor
+def shift_energy_uniform(coords, feats, scale_factor=0.1):
+    shift = 1 - torch.rand(1, dtype=feats.dtype, device=feats.device) * scale_factor
     return coords, feats * shift
 
-def shift_energy_byvoxel(coords, feats, max_scale_factor=0.1):
-    shift = 1 - torch.randn_like(feats, dtype=feats.dtype, device=feats.device) * max_scale_factor
+def shift_energy_byvoxel(coords, feats, scale_factor=0.1):
+    shift = 1 - torch.randn_like(feats, dtype=feats.dtype, device=feats.device) * scale_factor
     return coords, feats * shift
 
 def translate(coords, feats, cube_size=512):
@@ -38,13 +40,14 @@ def translate_byvoxel(coords, feats, scale_factor=0.3):
 def identity(coords, feats):
     return coords, feats
 
-aug_funcs = {
-    "rotate" : rotate,
-    "drop" : drop,
-    "shift_energy_normal" : shift_energy_normal,
-    "shift_energy_uniform" : shift_energy_uniform,
-    "shift_energy_byvoxel" : shift_energy_byvoxel,
-    "translate" : translate,
-    "translate_byvoxel" : translate_byvoxel,
-    "identity" : identity
-}
+def get_aug_funcs(energy_scale_factor, translate_scale_factor):
+    return {
+        "rotate" : rotate,
+        "drop" : drop,
+        "shift_energy_normal" : partial(shift_energy_normal, scale_factor=energy_scale_factor),
+        "shift_energy_uniform" : partial(shift_energy_uniform, scale_factor=energy_scale_factor),
+        "shift_energy_byvoxel" : partial(shift_energy_byvoxel, scale_factor=energy_scale_factor),
+        "translate" : translate,
+        "translate_byvoxel" : partial(translate_byvoxel, scale_factor=translate_scale_factor),
+        "identity" : identity
+    }

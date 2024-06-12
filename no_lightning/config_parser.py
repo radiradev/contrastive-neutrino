@@ -4,7 +4,7 @@ from collections import namedtuple
 import yaml
 
 from dataset import DataPrepType
-from augmentations import aug_funcs
+from augmentations import get_aug_funcs
 
 defaults = {
     "device" : "cuda:0",
@@ -16,7 +16,9 @@ defaults = {
     "n_augs" : 2,
     "data_path_s" : None,
     "alpha" : 1.0,
-    "lr" : 1e-4
+    "lr" : 1e-4,
+    "aug_energy_scale_factor" : 0.1,
+    "aug_translate_scale_factor" : 0.3
 }
 
 mandatory_fields = {
@@ -84,7 +86,10 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
         )
         if not os.path.exists(os.path.join(conf_dict["checkpoint_dir"], "preds")):
             os.makedirs(os.path.join(conf_dict["checkpoint_dir"], "preds"))
-
+    
+    aug_funcs = get_aug_funcs(
+        conf_dict.pop("aug_energy_scale_factor"), conf_dict.pop("aug_translate_scale_factor")
+    )
     conf_dict["augs"] = [ aug_funcs[aug] for aug in conf_dict["augs"] ]
 
     conf_namedtuple = namedtuple("conf", conf_dict)
