@@ -91,7 +91,7 @@ def main(args):
         y_pred = torch.cat(y_pred_classifier).detach().cpu().numpy()
         y_target = torch.cat(y_target_classifier).detach().cpu().numpy()
     elif args.dann:
-        print("Getting classifier predictions...")
+        print("Getting DANN predictions...")
         y_pred_classifier, y_target_classifier = [], []
         for data in tqdm(dataloader):
             model.set_input_test(data)
