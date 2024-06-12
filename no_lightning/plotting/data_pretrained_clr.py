@@ -53,7 +53,7 @@ def main():
     fig, ax = plt.subplots()
     rects1 = ax.bar(x - (width + spacing) * 1.5, nominal_accs, width, label="nominal classifier")
     rects2 = ax.bar(x - (width + spacing) * 0.5, clr_accs, width, label="pretrained clr")
-    rects3 = ax.bar(x + (width + spacing) * 0.5, notrain_clr_accs, width, label="DANN")
+    rects3 = ax.bar(x + (width + spacing) * 0.5, dann_accs, width, label="DANN")
     rects4 = ax.bar(x + (width + spacing) * 1.5, notrain_clr_accs, width, label="random clr")
     ax.set_ylabel("Accuracy")
     ax.set_title("Pretrained CLR performance for different 'data' realisations")
