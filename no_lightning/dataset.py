@@ -88,4 +88,4 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
 class DataPrepType(Enum):
     CONTRASTIVE_AUG = 1
     CLASSIFICATION = 2
-    CLASSIFICATION_AUG = 2
+    CLASSIFICATION_AUG = 3
