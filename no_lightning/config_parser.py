@@ -12,7 +12,7 @@ defaults = {
     "lr_decay_iter" : 0,
     "save_model" : "never",
     "net_dims" : [96, 192, 384, 768],
-    "augs" : ["rotate", "drop", "shift_energy_uniform", "translate"],
+    "augs" : ["rotate", "drop", "shift_energy_uniform", "translate", "identity"],
     "n_augs" : 2,
     "data_path_s" : None,
     "alpha" : 1.0,
@@ -86,7 +86,7 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
         )
         if not os.path.exists(os.path.join(conf_dict["checkpoint_dir"], "preds")):
             os.makedirs(os.path.join(conf_dict["checkpoint_dir"], "preds"))
-    
+
     aug_funcs = get_aug_funcs(
         conf_dict.pop("aug_energy_scale_factor"), conf_dict.pop("aug_translate_scale_factor")
     )
