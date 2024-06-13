@@ -11,7 +11,7 @@ from simclr import SimCLR
 from classifier import Classifier
 from dann import DANN
 from dataset import ThrowsDataset, DataPrepType
-from data_utils import clr_sparse_collate
+from data_utils import clr_sparse_collate, clr_labels_sparse_collate
 
 def main(args):
     conf = get_config(args.config)
@@ -185,8 +185,10 @@ def get_dataloaders(data_path, conf):
     )
     if conf.data_prep_type == DataPrepType.CLASSIFICATION:
         collate_fn = ME.utils.batch_sparse_collate
-    else:
+    elif conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG:
         collate_fn = clr_sparse_collate
+    else:
+        collate_fn = clr_labels_sparse_collate
     dataloader_train = DataLoader(
         dataset_train,
         batch_size=conf.batch_size,
