@@ -1,0 +1,18 @@
+name: "clr_nominal_labels"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/clr"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
+data_prep_type: "contrastive_augmentations_labels"
+max_num_workers: 12
+
+augs: ["identity", "rotate", "drop", "shift_energy_normal", "shift_energy_byvoxel", "translate", "translate_byvoxel"]
+n_augs: 3
+aug_energy_scale_factor: 0.25
+translate_energy_scale_factor: 0.3
+
+model: "sim_clr"
+save_model: "all"
+
+batch_size: 672
+epochs: 200
+

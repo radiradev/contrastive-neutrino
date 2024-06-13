@@ -74,18 +74,24 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             )
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
-        elif self.dataset_type == DataPrepType.CONTRASTIVE_AUG:
-            path, _ = self.samples[index]
+        elif (
+            self.dataset_type == DataPrepType.CONTRASTIVE_AUG or
+            self.dataset_type == DataPrepType.CONTRASTIVE_AUG_LABELS
+        ):
+            path, label = self.samples[index]
             sample = self.loader(path)
             coords, feats = sample['coordinates'], np.expand_dims(sample['adc'], axis=1)
             # no idea why coords is a tensor while feats is a numpy array
             xi = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
             xj = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
             xi, xj = self.contrastive_augmentations(xi, xj)
-            return xi, xj
+            if self.dataset_type == DataPrepType.CONTRASTIVE_AUG:
+                return xi, xj
+            return xi, xj, torch.tensor(label).long().unsqueeze(0)
 
 
 class DataPrepType(Enum):
     CONTRASTIVE_AUG = 1
     CLASSIFICATION = 2
     CLASSIFICATION_AUG = 3
+    CONTRASTIVE_AUG_LABELS = 4

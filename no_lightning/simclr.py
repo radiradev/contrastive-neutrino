@@ -3,8 +3,9 @@ import os
 import torch; import torch.nn as nn
 import MinkowskiEngine as ME
 
-from loss import contrastive_loss
+from loss import contrastive_loss, contrastive_loss_class_labels
 from voxel_convnext import VoxelConvNeXtCLR
+from dataset import DataPrepType
 
 class SimCLR(nn.Module):
     def __init__(self, conf):
@@ -18,7 +19,10 @@ class SimCLR(nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
 
-        self.criterion = contrastive_loss
+        if conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG_LABELS:
+            self.criterion = contrastive_loss_class_labels
+        else:
+            self.criterion = contrastive_loss
 
         self.loss = None
 
@@ -27,12 +31,15 @@ class SimCLR(nn.Module):
         self.s_j = None
         self.s_i_out = None
         self.s_j_out = None
+        self.label = None
 
     def set_input(self, data):
         self.data = data
-        xi, xj = data
+        xi, xj = data[:2]
         self.s_i = self._create_tensor(xi[1], xi[0])
         self.s_j = self._create_tensor(xj[1], xj[0])
+        if len(data) == 3:
+            self.label = data[-1]
 
     def eval(self):
         self.net.eval()
@@ -73,13 +80,13 @@ class SimCLR(nn.Module):
         with torch.no_grad():
             self.forward()
             if compute_loss:
-                self.loss = self.criterion(self.s_i_out, self.s_j_out)
+                self.loss = self._calc_loss()
 
     def optimize_parameters(self):
         self.forward()
 
         self.optimizer.zero_grad()
-        self.loss = self.criterion(self.s_i_out, self.s_j_out)
+        self.loss = self._calc_loss()
         self.loss.backward()
         self.optimizer.step()
 
@@ -89,3 +96,8 @@ class SimCLR(nn.Module):
             coordinates=coordinates,
             device=self.device
         )
+
+    def _calc_loss(self):
+        if self.label is not None:
+            return self.criterion(self.s_i_out, self.s_j_out, self.label)
+        return self.criterion(self.s_i_out, self.s_j_out)
