@@ -5,3 +5,4 @@ jobs/logs
 
 plotting/.venv_*
 plotting/*.pdf
+plotting/umaps/*.pdf
