@@ -191,10 +191,18 @@ class DANN(nn.Module):
 
     def test(self, compute_loss=True):
         with torch.no_grad():
-            self.forward_test()
-            if compute_loss:
-                loss_label_s = self.criterion_label(self.pred_label_s, self.target_label_s)
-                self.loss = loss_label_s
+            if self.s_in_t is None or self.data_t is None:
+                self.forward_test()
+                if compute_loss:
+                    loss_label_s = self.criterion_label(self.pred_label_s, self.target_label_s)
+                    self.loss = loss_label_s
+            else:
+                self.forward()
+                if compute_loss:
+                    loss_label_s = self.criterion_label(self.pred_label_s, self.target_label_s)
+                    loss_domain_s = self.criterion_domain(self.pred_domain_s, self.target_domain_s)
+                    loss_domain_t = self.criterion_domain(self.pred_domain_t, self.target_domain_t)
+                    self.loss = loss_label_s + loss_domain_s + loss_domain_t
 
     def optimize_parameters(self):
         self.forward()
