@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p GPU
 #SBATCH -N1
-#SBATCH -c16
+#SBATCH -c12
 #SBATCH --gres=gpu:a100:1
 #SBATCH --exclude=compute-gpu-0-[0,1,3,5]
 #SBATCH --error=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/err/job.%x.%j.err
