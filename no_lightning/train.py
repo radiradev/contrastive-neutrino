@@ -183,12 +183,12 @@ def get_dataloaders(data_path, conf):
         os.path.join(data_path, "val"), val_data_prep_type, conf.augs, conf.n_augs,
         train_mode=False
     )
-    if conf.data_prep_type == DataPrepType.CLASSIFICATION:
-        collate_fn = ME.utils.batch_sparse_collate
-    elif conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG:
+    if conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG:
         collate_fn = clr_sparse_collate
-    else:
+    elif conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG_LABELS:
         collate_fn = clr_labels_sparse_collate
+    else:
+        collate_fn = ME.utils.batch_sparse_collate
     dataloader_train = DataLoader(
         dataset_train,
         batch_size=conf.batch_size,
