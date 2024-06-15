@@ -1,4 +1,4 @@
-name: "classifier_nominal_final"
+name: "classifier_nominal_final_moreaugs"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
