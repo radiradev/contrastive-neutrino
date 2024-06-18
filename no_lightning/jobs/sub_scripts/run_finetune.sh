@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p GPU
 #SBATCH -N1
-#SBATCH -c16
+#SBATCH -c8
 #SBATCH --gres=gpu:1
 #SBATCH --error=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/err/job.%x.%j.err
 #SBATCH --output=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/out/job.%x.%j.out
