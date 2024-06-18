@@ -3,7 +3,7 @@ checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/c
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw7"
 data_prep_type: "contrastive_augmentations"
-max_num_workers: 12
+max_num_workers: 8
 
 augs: ["identity", "rotate", "drop", "shift_energy_byvoxel", "shift_energy_normal", "translate_byvoxel"]
 n_augs: 3

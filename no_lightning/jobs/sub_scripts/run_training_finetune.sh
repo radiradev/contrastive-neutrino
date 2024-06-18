@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -p GPU
 #SBATCH -N1
-#SBATCH -c16
+#SBATCH -c8
 #SBATCH --gres=gpu:a100:1
 # #SBATCH --nodelist=compute-gpu-0-4
 #SBATCH --exclude=compute-gpu-0-[0,1,3,5]
