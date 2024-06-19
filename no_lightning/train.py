@@ -1,4 +1,4 @@
-import time, argparse, os, glob, sys
+import time, argparse, os, glob
 
 import numpy as np
 
