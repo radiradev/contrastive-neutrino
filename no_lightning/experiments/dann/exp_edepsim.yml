@@ -1,0 +1,13 @@
+name: "dann_edepsim"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/dann"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
+data_path_s: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/edepsim"
+data_prep_type: "classification"
+max_num_workers: 8
+
+model: "dann"
+save_model: "best"
+
+batch_size: 672
+epochs: 100
