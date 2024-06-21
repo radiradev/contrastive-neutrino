@@ -25,10 +25,10 @@ CLRS = {
 }
 DANNS = {
     "nominal" : "dann/dann_nominal_final",
-    "electhrow1" : "dann/dann_electhrow1_final",
+    "electhrow1" : "dann/dann_electhrow1_final_again",
     "electhrow3" : "dann/dann_electhrow3_final",
-    "electhrow4" : "dann/dann_electhrow4_final",
-    "electhrow5" : "dann/dann_electhrow5_final",
+    "electhrow4" : "dann/dann_electhrow4_final_again",
+    "electhrow5" : "dann/dann_electhrow5_final_again",
     "electhrow6" : "dann/dann_electhrow6_final",
     "electhrow7" : "dann/dann_electhrow7_final"
 }
