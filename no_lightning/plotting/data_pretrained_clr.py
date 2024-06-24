@@ -32,6 +32,7 @@ DANNS = {
     "electhrow6" : "dann/dann_electhrow6_final",
     "electhrow7" : "dann/dann_electhrow7_final"
 }
+TICKLABELS = ["Nominal", "Throw1", "Throw2", "Throw3", "Throw4", "Throw5", "Throw6"]
 
 def main():
     datasets = list(CLRS)
@@ -77,7 +78,7 @@ def main():
     )
     rects4 = ax[1].bar(x + (width + spacing) * 1.5, notrain_clr_accs, width, label="Random Representation")
     ax[0].bar(
-        x - (width + spacing) * 1.5, nominal_accs_rel, width, label="Nominal_Classifier"
+        x - (width + spacing) * 1.5, nominal_accs_rel, width, label="Nominal Classifier"
     )
     ax[0].bar(
         x - (width + spacing) * 0.5, clr_accs_rel, width, label="Contrastive Pretraining"
@@ -95,10 +96,12 @@ def main():
         "Pretrained Contrastive Model Performance for Different 'data' Realisations", fontsize=14
     )
     ax[1].set_xticks(x)
-    ax[1].set_xticklabels(datasets)
+    ax[1].set_xticklabels(TICKLABELS)
     ax[1].set_ylim(0, 1)
+    ax[0].set_ylim(-0.39, 0.2)
     ax[1].set_axisbelow(True)
     ax[1].grid(axis="y")
+    ax[0].set_axisbelow(True)
     ax[0].grid(axis="y")
     ax[0].legend(loc="upper right", ncols=4)
     autolabel(rects1, ax[1])
