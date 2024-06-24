@@ -12,16 +12,16 @@ matplotlib.rcParams['axes.prop_cycle'] = matplotlib.cycler(color=['#377eb8', '#f
 
 CHECKPOINT_DIR = "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints"
 
-CLASSIFIER = "classifier/classifier_nominal_final_tunedaugs"
+CLASSIFIER = "classifier/classifier_nominal_final_standardaugs"
 NOTRAIN_CLR = "clr/clr_notrain"
 CLRS = {
-    "nominal" : "clr/clr_nominal_final_tunedaugs",
-    "electhrow1" : "clr/clr_electhrow1_final_tunedaugs",
-    "electhrow3" : "clr/clr_electhrow3_final_tunedaugs",
-    "electhrow4" : "clr/clr_electhrow4_final_tunedaugs",
-    "electhrow5" : "clr/clr_electhrow5_final_tunedaugs",
-    "electhrow6" : "clr/clr_electhrow6_final_tunedaugs",
-    "electhrow7" : "clr/clr_electhrow7_final_tunedaugs"
+    "nominal" : "clr/clr_nominal_final_standardaugs",
+    "electhrow1" : "clr/clr_electhrow1_final_standardaugs",
+    "electhrow3" : "clr/clr_electhrow3_final_standardaugs",
+    "electhrow4" : "clr/clr_electhrow4_final_standardaugs",
+    "electhrow5" : "clr/clr_electhrow5_final_standardaugs",
+    "electhrow6" : "clr/clr_electhrow6_final_standardaugs",
+    "electhrow7" : "clr/clr_electhrow7_final_standardaugs"
 }
 DANNS = {
     "nominal" : "dann/dann_nominal_final",
