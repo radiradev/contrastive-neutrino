@@ -37,10 +37,10 @@ def main():
     datasets = list(CLRS)
     nominal_accs, clr_accs, notrain_clr_accs, dann_accs = [], [], [], []
     for dataset in tqdm(datasets):
-        # nominal_accs.append(0.8)
-        # clr_accs.append(0.8)
-        # notrain_clr_accs.append(0.8)
-        # dann_accs.append(0.8)
+        # nominal_accs.append(np.random.rand() * 0.85)
+        # clr_accs.append(np.random.rand() * 0.85)
+        # notrain_clr_accs.append(np.random.rand() * 0.85)
+        # dann_accs.append(np.random.rand() * 0.85)
         clf_preds_path = os.path.join(
             CHECKPOINT_DIR, CLASSIFIER, "test_results", f"preds_{dataset}.yml"
         )
@@ -58,28 +58,56 @@ def main():
         )
         dann_accs.append(get_acc(dann_preds_path))
 
+    nominal_accs_rel = [ (acc - nominal_accs[0]) for acc in nominal_accs ]
+    clr_accs_rel = [ (acc - clr_accs[0]) for acc in clr_accs ]
+    dann_accs_rel = [ (acc - dann_accs[0]) for acc in dann_accs ]
+
     x = np.arange(len(datasets))
     width = 0.15
     spacing = 0.0
-    fig, ax = plt.subplots(figsize=(10, 7))
-    rects1 = ax.bar(x - (width + spacing) * 1.5, nominal_accs, width, label="nominal classifier")
-    rects2 = ax.bar(x - (width + spacing) * 0.5, clr_accs, width, label="pretrained clr")
-    rects3 = ax.bar(x + (width + spacing) * 0.5, dann_accs, width, label="DANN")
-    rects4 = ax.bar(x + (width + spacing) * 1.5, notrain_clr_accs, width, label="random representation")
-    ax.set_ylabel("Accuracy", fontsize=12)
-    ax.set_title("Pretrained CLR performance for different 'data' realisations", fontsize=14)
-    ax.set_xticks(x)
-    ax.set_xticklabels(datasets)
-    ax.set_ylim(0, 1)
-    ax.set_axisbelow(True)
-    ax.grid(axis="y")
-    ax.legend(loc="upper right", ncols=4)
-    autolabel(rects1, ax)
-    autolabel(rects2, ax)
-    autolabel(rects3, ax)
-    autolabel(rects4, ax)
+    fig, ax = plt.subplots(nrows=2, sharex=True, height_ratios=[1, 3], figsize=(10, 7))
+    rects1 = ax[1].bar(
+        x - (width + spacing) * 1.5, nominal_accs, width, label="Nominal Classifier"
+    )
+    rects2 = ax[1].bar(
+        x - (width + spacing) * 0.5, clr_accs, width, label="Contrastive Pretraining"
+    )
+    rects3 = ax[1].bar(
+        x + (width + spacing) * 0.5, dann_accs, width, label="DANN"
+    )
+    rects4 = ax[1].bar(x + (width + spacing) * 1.5, notrain_clr_accs, width, label="Random Representation")
+    ax[0].bar(
+        x - (width + spacing) * 1.5, nominal_accs_rel, width, label="Nominal_Classifier"
+    )
+    ax[0].bar(
+        x - (width + spacing) * 0.5, clr_accs_rel, width, label="Contrastive Pretraining"
+    )
+    ax[0].bar(
+        x + (width + spacing) * 0.5, dann_accs_rel, width, label="DANN"
+    )
+    ax[0].bar(
+        x + (width + spacing) * 1.5, [0] * len(dann_accs_rel), width, label="Random Representation"
+    )
+    ax[0].set_xticklabels([])
+    ax[0].set_ylabel("Acc. - Nominal Acc.", fontsize=12)
+    ax[1].set_ylabel("Acc.", fontsize=12)
+    ax[0].set_title(
+        "Pretrained Contrastive Model Performance for Different 'data' Realisations", fontsize=14
+    )
+    ax[1].set_xticks(x)
+    ax[1].set_xticklabels(datasets)
+    ax[1].set_ylim(0, 1)
+    ax[1].set_axisbelow(True)
+    ax[1].grid(axis="y")
+    ax[0].grid(axis="y")
+    ax[0].legend(loc="upper right", ncols=4)
+    autolabel(rects1, ax[1])
+    autolabel(rects2, ax[1])
+    autolabel(rects3, ax[1])
+    autolabel(rects4, ax[1])
 
-    fig.tight_layout()
+    fig.subplots_adjust(hspace=0)
+    # fig.tight_layout()
     plt.savefig("pretrained_clr_acc.pdf")
     plt.close()
     # plt.show()
