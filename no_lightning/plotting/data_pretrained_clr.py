@@ -50,10 +50,10 @@ def main():
             CHECKPOINT_DIR, CLRS[dataset], "test_results", f"preds_{dataset}.yml"
         )
         clr_accs.append(get_acc(clr_preds_path))
-        notrain_clr_preds_path = os.path.join(
-            CHECKPOINT_DIR, NOTRAIN_CLR, "test_results", f"preds_{dataset}.yml"
-        )
-        notrain_clr_accs.append(get_acc(notrain_clr_preds_path))
+        # notrain_clr_preds_path = os.path.join(
+        #     CHECKPOINT_DIR, NOTRAIN_CLR, "test_results", f"preds_{dataset}.yml"
+        # )
+        # notrain_clr_accs.append(get_acc(notrain_clr_preds_path))
         dann_preds_path = os.path.join(
             CHECKPOINT_DIR, DANNS[dataset], "test_results", f"preds_{dataset}.yml"
         )
@@ -64,50 +64,50 @@ def main():
     dann_accs_rel = [ (acc - dann_accs[0]) for acc in dann_accs ]
 
     x = np.arange(len(datasets))
-    width = 0.15
+    width = 0.20
     spacing = 0.0
-    fig, ax = plt.subplots(nrows=2, sharex=True, height_ratios=[1, 3], figsize=(10, 7))
+    fig, ax = plt.subplots(nrows=2, sharex=True, height_ratios=[1, 3], figsize=(12, 7))
     rects1 = ax[1].bar(
-        x - (width + spacing) * 1.5, nominal_accs, width, label="Nominal Classifier"
+        x - (width + spacing), nominal_accs, width, label="Nominal Classifier"
     )
     rects2 = ax[1].bar(
-        x - (width + spacing) * 0.5, clr_accs, width, label="Contrastive Pretraining"
+        x, clr_accs, width, label="Contrastive Pretraining"
     )
     rects3 = ax[1].bar(
-        x + (width + spacing) * 0.5, dann_accs, width, label="DANN"
+        x + (width + spacing), dann_accs, width, label="DANN"
     )
-    rects4 = ax[1].bar(x + (width + spacing) * 1.5, notrain_clr_accs, width, label="Random Representation")
+    # rects4 = ax[1].bar(x + (width + spacing) * 1.5, notrain_clr_accs, width, label="Random Representation")
     ax[0].bar(
-        x - (width + spacing) * 1.5, nominal_accs_rel, width, label="Nominal Classifier"
-    )
-    ax[0].bar(
-        x - (width + spacing) * 0.5, clr_accs_rel, width, label="Contrastive Pretraining"
+        x - (width + spacing), nominal_accs_rel, width, label="Nominal Classifier"
     )
     ax[0].bar(
-        x + (width + spacing) * 0.5, dann_accs_rel, width, label="DANN"
+        x, clr_accs_rel, width, label="Contrastive Pretraining"
     )
     ax[0].bar(
-        x + (width + spacing) * 1.5, [0] * len(dann_accs_rel), width, label="Random Representation"
+        x + (width + spacing), dann_accs_rel, width, label="DANN"
     )
+    # ax[0].bar(
+    #     x + (width + spacing) * 1.5, [0] * len(dann_accs_rel), width, label="Random Representation"
+    # )
     ax[0].set_xticklabels([])
-    ax[0].set_ylabel("Acc. - Nominal Acc.", fontsize=12)
-    ax[1].set_ylabel("Acc.", fontsize=12)
+    ax[0].set_ylabel("Acc. - Nominal Acc.", fontsize=13)
+    ax[1].set_ylabel("Acc.", fontsize=13)
     ax[0].set_title(
         "Pretrained Contrastive Model Performance for Different 'data' Realisations", fontsize=14
     )
     ax[1].set_xticks(x)
-    ax[1].set_xticklabels(TICKLABELS)
+    ax[1].set_xticklabels(TICKLABELS, fontsize=13)
     ax[1].set_ylim(0, 1)
     ax[0].set_ylim(-0.39, 0.2)
     ax[1].set_axisbelow(True)
     ax[1].grid(axis="y")
     ax[0].set_axisbelow(True)
     ax[0].grid(axis="y")
-    ax[0].legend(loc="upper right", ncols=4)
+    ax[0].legend(loc="upper center", ncols=4, fontsize=12)
     autolabel(rects1, ax[1])
     autolabel(rects2, ax[1])
     autolabel(rects3, ax[1])
-    autolabel(rects4, ax[1])
+    # autolabel(rects4, ax[1])
 
     fig.subplots_adjust(hspace=0)
     # fig.tight_layout()

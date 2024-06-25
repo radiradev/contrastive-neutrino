@@ -34,7 +34,7 @@ def main(args):
     ax[1].set_title("Classifier Throw", fontsize=12)
     ax[2].set_title("Contrastive Pretraining Throw", fontsize=12)
     ax[3].set_title("DANN Throw", fontsize=12)
-    plt.legend(loc="upper right", fontsize=10, markerscale=3)
+    plt.legend(loc="upper right", fontsize=10, markerscale=4)
     fig.suptitle(args.title, fontsize=14)
     fig.tight_layout()
     plt.savefig("umap_multi.pdf")
