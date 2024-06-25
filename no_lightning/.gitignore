@@ -9,3 +9,4 @@ plotting/umaps/*.pdf
 plotting/bar_charts/*.pdf
 plotting/augmentations/*.pdf
 plotting/throws/*.pdf
+plotting/confusion_matrices/*.pdf
