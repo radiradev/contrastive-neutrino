@@ -84,18 +84,25 @@ def contrastive_loss_class_labels(x_i, x_j, labels, temperature=0.1, gather_dist
     batch_size = x_i.shape[0]
     z_i = F.normalize(x_i, dim=1 )
     z_j = F.normalize(x_j, dim=1 )
-    z   = torch.cat( [z_i, z_j], dim=0 )
+    z = torch.cat( [z_i, z_j], dim=0 )
     similarity_matrix = F.cosine_similarity( z.unsqueeze(1), z.unsqueeze(0), dim=2 )
+
+    # 0.5 for same class pairs, 1.0 for same image pairs
     labels = torch.cat([labels, labels], dim=0)
-    positives_mask = labels[:, None] == labels[None, :]
-    positives_mask = positives_mask * (~torch.eye(2 * batch_size, 2 * batch_size, dtype=bool)).float()
+    positives_mask = (labels[:, None] == labels[None, :]).float() * 0.5
+    ids = torch.cat([torch.arange(batch_size), torch.arange(batch_size)], dim=0)
+    positives_mask += (ids[:, None] == ids[None, :]).float() * 0.5
+    positives_mask *= (~torch.eye(2 * batch_size, 2 * batch_size, dtype=bool)).float()
     positives_mask = positives_mask.to(xdevice)
-    nominator = torch.exp(positives_mask * similarity_matrix / temperature )
+    nominator = positives_mask * torch.exp(similarity_matrix / temperature)
+
     negatives_mask = ( ~torch.eye( 2*batch_size, 2*batch_size, dtype=bool ) ).float()
     negatives_mask = negatives_mask.to( xdevice )
     denominator = negatives_mask * torch.exp( similarity_matrix / temperature )
-    loss_partial = -torch.log( nominator / torch.sum( denominator, dim=1 ) )
+
+    loss_partial = -torch.log( torch.sum(nominator, dim=1) / torch.sum( denominator, dim=1 ) )
     loss = torch.sum( loss_partial )/( 2*batch_size )
+
     return loss
 
 class NT_Xent(nn.Module):
