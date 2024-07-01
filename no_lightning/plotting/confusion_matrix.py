@@ -28,7 +28,7 @@ def main(args):
     labels = group_percentages
     labels = np.asarray(labels).reshape(5,5)
     sns.set(font_scale=1.4)
-    fig, ax = plt.subplots(figsize=(8,8))
+    fig, ax = plt.subplots(figsize=(8,7))
     sns.heatmap(C, annot=labels, annot_kws={'size': 16}, fmt='', ax=ax, cmap='Blues')
     ax.set_xlabel("Predicted labels")
     ax.set_ylabel("True labels")
