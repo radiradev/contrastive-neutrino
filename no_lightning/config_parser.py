@@ -18,7 +18,8 @@ defaults = {
     "alpha" : 1.0,
     "lr" : 1e-4,
     "aug_energy_scale_factor" : 0.1,
-    "aug_translate_scale_factor" : 0.3
+    "aug_translate_scale_factor" : 0.3,
+    "contrastive_loss_same_label_weight" : 0.5
 }
 
 mandatory_fields = {

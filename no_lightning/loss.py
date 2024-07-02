@@ -59,7 +59,9 @@ def contrastive_loss(x_i, x_j, temperature=0.1, gather_distributed=False):
     loss = torch.sum( loss_partial )/( 2*batch_size )
     return loss
 
-def contrastive_loss_class_labels(x_i, x_j, labels, temperature=0.1, gather_distributed=False):
+def contrastive_loss_class_labels(
+    x_i, x_j, labels, temperature=0.1, gather_distributed=False, same_label_weight=0.5
+):
     """
     Contrastive loss function from bmdillon/JetCLR
 
@@ -89,9 +91,9 @@ def contrastive_loss_class_labels(x_i, x_j, labels, temperature=0.1, gather_dist
 
     # 0.5 for same class pairs, 1.0 for same image pairs
     labels = torch.cat([labels, labels], dim=0)
-    positives_mask = (labels[:, None] == labels[None, :]).float() * 0.5
+    positives_mask = (labels[:, None] == labels[None, :]).float() * same_label_weight
     ids = torch.cat([torch.arange(batch_size), torch.arange(batch_size)], dim=0)
-    positives_mask += (ids[:, None] == ids[None, :]).float() * 0.5
+    positives_mask += (ids[:, None] == ids[None, :]).float() * (1.0 - same_label_weight)
     positives_mask *= (~torch.eye(2 * batch_size, 2 * batch_size, dtype=bool)).float()
     positives_mask = positives_mask.to(xdevice)
     nominator = positives_mask * torch.exp(similarity_matrix / temperature)
