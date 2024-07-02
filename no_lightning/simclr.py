@@ -21,6 +21,7 @@ class SimCLR(nn.Module):
 
         if conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG_LABELS:
             self.criterion = contrastive_loss_class_labels
+            self.crit_same_label_weight = conf.contrastive_loss_same_label_weight
         else:
             self.criterion = contrastive_loss
 
@@ -99,5 +100,8 @@ class SimCLR(nn.Module):
 
     def _calc_loss(self):
         if self.label is not None:
-            return self.criterion(self.s_i_out, self.s_j_out, self.label)
+            return self.criterion(
+                self.s_i_out, self.s_j_out, self.label,
+                same_label_weight=self.crit_same_label_weight
+            )
         return self.criterion(self.s_i_out, self.s_j_out)
