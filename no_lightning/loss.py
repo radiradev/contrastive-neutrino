@@ -98,6 +98,9 @@ def contrastive_loss_class_labels(
     positives_mask = positives_mask.to(xdevice)
     nominator = positives_mask * torch.exp(similarity_matrix / temperature)
 
+    # NOTE Do I need to include the same 0.5 weighting for the class pairs in the denominator too?
+    # If I dont the loss minimum is no longer zero, not sure if that is really going to matter.
+    # If I did I would need to tweak the negatives mask to be 0.5 for the class pairs
     negatives_mask = ( ~torch.eye( 2*batch_size, 2*batch_size, dtype=bool ) ).float()
     negatives_mask = negatives_mask.to( xdevice )
     denominator = negatives_mask * torch.exp( similarity_matrix / temperature )
