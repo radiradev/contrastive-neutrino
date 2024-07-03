@@ -32,6 +32,15 @@ DANNS = {
     "electhrow6" : "dann/dann_electhrow6_final",
     "electhrow7" : "dann/dann_electhrow7_final"
 }
+# DANNS = {
+#     "nominal" : "clr/clr_nominal_labels",
+#     "electhrow1" : "clr/clr_nominal_labels",
+#     "electhrow3" : "clr/clr_nominal_labels",
+#     "electhrow4" : "clr/clr_nominal_labels",
+#     "electhrow5" : "clr/clr_nominal_labels",
+#     "electhrow6" : "clr/clr_nominal_labels",
+#     "electhrow7" : "clr/clr_nominal_labels"
+# }
 TICKLABELS = ["Nominal", "Throw1", "Throw2", "Throw3", "Throw4", "Throw5", "Throw6"]
 
 def main():
