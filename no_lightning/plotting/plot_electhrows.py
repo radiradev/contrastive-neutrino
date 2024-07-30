@@ -24,7 +24,10 @@ def main():
     torch.manual_seed(2)
 
     dataset = ThrowsDataset(
-        os.path.join(conf.data_path, "val"), conf.data_prep_type, conf.augs, conf.n_augs
+        os.path.join(conf.data_path, "val"),
+        conf.data_prep_type,
+        conf.augs, conf.n_augs,
+        conf.quantisation_size
     )
 
     sample_nom = np.load(NOM_PATH)

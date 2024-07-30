@@ -173,14 +173,20 @@ def get_print_str(epoch, losses, n_iter, n_iter_tot, t_iter):
 
 def get_dataloaders(data_path, conf):
     dataset_train = ThrowsDataset(
-        os.path.join(data_path, "train"), conf.data_prep_type, conf.augs, conf.n_augs
+        os.path.join(data_path, "train"),
+        conf.data_prep_type,
+        conf.augs, conf.n_augs,
+        conf.quantization_size
     )
     if conf.data_prep_type == DataPrepType.CLASSIFICATION_AUG:
         val_data_prep_type = DataPrepType.CLASSIFICATION
     else:
         val_data_prep_type = conf.data_prep_type
     dataset_val = ThrowsDataset(
-        os.path.join(data_path, "val"), val_data_prep_type, conf.augs, conf.n_augs,
+        os.path.join(data_path, "val"),
+        val_data_prep_type,
+        conf.augs, conf.n_augs,
+        conf.quantization_size,
         train_mode=False
     )
     if conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG:

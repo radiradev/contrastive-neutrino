@@ -26,7 +26,10 @@ def main():
     torch.manual_seed(2)
 
     dataset = ThrowsDataset(
-        os.path.join(conf.data_path, "val"), conf.data_prep_type, conf.augs, conf.n_augs
+        os.path.join(conf.data_path, "val"),
+        conf.data_prep_type,
+        conf.augs, conf.n_augs,
+        conf.quantization_size
     )
 
     path, _ = dataset.samples[IDX]
