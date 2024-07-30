@@ -76,7 +76,7 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
     if (
         conf_dict["xtalk"] is not None and conf_dict["xtalk"] > 1.0 or
         conf_dict["xtalk_s"] is not None and conf_dict["xtalk_s"] > 1.0
-    )
+    ):
         raise ValueError("xtalk and/or xtalk_s must be None or <= 1.0")
 
     if prep_checkpoint_dir:
