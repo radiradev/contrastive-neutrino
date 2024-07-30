@@ -19,7 +19,8 @@ defaults = {
     "lr" : 1e-4,
     "aug_energy_scale_factor" : 0.1,
     "aug_translate_scale_factor" : 0.3,
-    "contrastive_loss_same_label_weight" : 0.5
+    "contrastive_loss_same_label_weight" : 0.5,
+    "quantization_size" : 0.38
 }
 
 mandatory_fields = {
@@ -27,7 +28,6 @@ mandatory_fields = {
     "data_prep_type",
     "model",
     "batch_size",
-    # "throw_names",
     "epochs",
     "name"
 }
@@ -60,9 +60,6 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
         conf_dict["data_prep_type"] = DataPrepType.CONTRASTIVE_AUG_LABELS
     else:
         raise ValueError("data_prep_type={} not recognised".format(conf_dict["data_prep_type"]))
-
-    # if not isinstance(conf_dict["throw_names"], dict):
-    #     raise ValueError("'throw_names' should be a dict of (throw file name, informative name)")
 
     if conf_dict["save_model"] not in ["never", "latest", "best", "all", "notrain"]:
         raise ValueError(

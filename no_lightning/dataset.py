@@ -9,14 +9,16 @@ import torchvision
 from MinkowskiEngine.utils import sparse_quantize
 
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
-    quantization_size = 0.38
-
-    def __init__(self, dataroot, dataset_type, augs, n_augs, extensions='.npz', train_mode=True):
+    def __init__(
+        self, dataroot, dataset_type, augs, n_augs, quantization_size,
+        extensions='.npz', train_mode=True
+    ):
         super().__init__(root=dataroot, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
         self.train_mode = train_mode
         self.augs = augs
         self.n_augs = min(n_augs, len(self.augs))
+        self.quantization_size = quantization_size
 
         self.index_history = deque(self.__len__() * [0], self.__len__())
 

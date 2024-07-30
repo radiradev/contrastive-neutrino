@@ -45,7 +45,10 @@ def main(args):
         network.eval()
 
     dataset = ThrowsDataset(
-        os.path.join(args.test_data_path, "test"), DataPrepType.CLASSIFICATION, [], 0,
+        os.path.join(args.test_data_path, "test"),
+        DataPrepType.CLASSIFICATION,
+        [], 0,
+        conf.quantization_size,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
