@@ -10,10 +10,10 @@ max_num_workers: 8
 augs: ["identity", "rotate", "drop", "shift_energy_byvoxel", "translate_byvoxel"]
 n_augs: 3
 aug_energy_scale_factor: 0.25
+aug_translate_scale_factor: 1.0
 
 model: "sim_clr"
 save_model: "all"
 
-batch_size: 672
+batch_size: 512
 epochs: 200
-
