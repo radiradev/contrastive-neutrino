@@ -45,14 +45,14 @@ def main(args):
         dataprep,
         conf.augs, conf.n_augs,
         conf.quantization_size,
-        conf.xtalk
+        args.nominal_xtalk
     )
     dataset_val = ThrowsDataset(
         os.path.join(args.finetune_data_path, "val"),
         dataprep,
         conf.augs, conf.n_augs,
         conf.quantization_size,
-        conf.xtalk,
+        args.nominal_xtalk,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
@@ -147,6 +147,7 @@ def parse_arguments():
     parser.add_argument("--pickle_name", type=str, default="finetune_model_logreg")
     parser.add_argument("--no_augs", action="store_true")
     parser.add_argument("--max_iter", type=int, default=120)
+    parser.add_argument("--nominal_xtalk", type=float, default=None)
 
     args = parser.parse_args()
 
