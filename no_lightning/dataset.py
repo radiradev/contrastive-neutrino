@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 from collections import deque
 
@@ -11,8 +12,9 @@ from MinkowskiEngine.utils import sparse_quantize
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     def __init__(
         self, dataroot, dataset_type, augs, n_augs, quantization_size, xtalk,
-        extensions='.npz', train_mode=True
+        extensions=None, train_mode=True
     ):
+        extensions = self.guess_extensions(dataroot) if extensions is None else extensions
         super().__init__(root=dataroot, extensions=extensions, loader=self.loader)
         self.dataset_type = dataset_type
         self.train_mode = train_mode
@@ -23,8 +25,16 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
 
         self.index_history = deque(self.__len__() * [0], self.__len__())
 
+    def guess_extensions(self, dataroot):
+        for _, _, fnames in os.walk(dataroot):
+            if fnames:
+                return "." + fnames[0].split(".")[-1]
+
     def loader(self, path):
-        return np.load(path)
+        if self.extensions == ".npz":
+            return np.load(path)
+        else:
+            return torch.load(path)
 
     def contrastive_augmentations(self, xi, xj):
         funcs = self.augs
@@ -58,7 +68,7 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             coords, feats = func(coords, feats)
         return coords, feats
 
-    def filter_crosstalk(hit_mask):
+    def filter_crosstalk(self, hit_mask):
         nb_xtalk = np.sum(hit_mask == False)
         new_nb_xtalk = int(nb_xtalk * self.xtalk)
         xtalk_indices = np.where(hit_mask == False)[0]
@@ -75,11 +85,11 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             reco_hits = sample["reco_hits"]
             hit_mask = sample["Tag_Trk"]
             if self.xtalk < 1.0:
-                filter_crosstalk(hit_mask)
+                self.filter_crosstalk(hit_mask)
                 reco_hits = reco_hits[hit_mask]
             coords, feats = reco_hits[:, :3], reco_hits[:, 3].reshape(-1, 1)
         else:
-            coords, feats = sample["coordinates"], sample["adc"]
+            coords, feats = sample["coordinates"], np.expand_dims(sample["adc"], axis=1)
 
         if (
             self.dataset_type == DataPrepType.CLASSIFICATION or
@@ -90,7 +100,7 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
                     torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float)
                 )
             coords, feats = sparse_quantize(
-                coords, np.expand_dims(feats, axis=1), quantization_size=self.quantization_size
+                coords, feats, quantization_size=self.quantization_size
             )
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
@@ -98,7 +108,6 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             self.dataset_type == DataPrepType.CONTRASTIVE_AUG or
             self.dataset_type == DataPrepType.CONTRASTIVE_AUG_LABELS
         ):
-            feats = np.expand_dims(feats, axis=1) # dont know why I am doing this
             xi = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
             xj = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
             xi, xj = self.contrastive_augmentations(xi, xj)
