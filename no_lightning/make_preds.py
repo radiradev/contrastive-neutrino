@@ -50,6 +50,7 @@ def main(args):
         DataPrepType.CLASSIFICATION,
         [], 0,
         conf.quantization_size,
+        xtalk=conf.xtalk,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate

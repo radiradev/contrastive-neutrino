@@ -10,7 +10,7 @@ from MinkowskiEngine.utils import sparse_quantize
 
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     def __init__(
-        self, dataroot, dataset_type, augs, n_augs, quantization_size,
+        self, dataroot, dataset_type, augs, n_augs, quantization_size, xtalk,
         extensions='.npz', train_mode=True
     ):
         super().__init__(root=dataroot, extensions=extensions, loader=self.loader)
@@ -19,6 +19,7 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         self.augs = augs
         self.n_augs = min(n_augs, len(self.augs))
         self.quantization_size = quantization_size
+        self.xtalk = xtalk
 
         self.index_history = deque(self.__len__() * [0], self.__len__())
 
@@ -57,16 +58,33 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             coords, feats = func(coords, feats)
         return coords, feats
 
+    def filter_crosstalk(hit_mask):
+        nb_xtalk = np.sum(hit_mask == False)
+        new_nb_xtalk = int(nb_xtalk * self.xtalk)
+        xtalk_indices = np.where(hit_mask == False)[0]
+        random_indices = np.random.choice(xtalk_indices, new_nb_xtalk, replace=False)
+        hit_mask[random_indices] = True
+
     def __getitem__(self, index: int):
         self.index_history.append(index)
+        path, label = self.samples[index]
+        sample = self.loader(path)
+
+        # Working with segmentedcube data where we vary the crosstalk as a throw
+        if self.xtalk is not None:
+            reco_hits = sample["reco_hits"]
+            hit_mask = sample["Tag_Trk"]
+            if self.xtalk < 1.0:
+                filter_crosstalk(hit_mask)
+                reco_hits = reco_hits[hit_mask]
+            coords, feats = reco_hits[:, :3], reco_hits[:, 3].reshape(-1, 1)
+        else:
+            coords, feats = sample["coordinates"], sample["adc"]
 
         if (
             self.dataset_type == DataPrepType.CLASSIFICATION or
             self.dataset_type == DataPrepType.CLASSIFICATION_AUG
         ):
-            path, label = self.samples[index]
-            sample = self.loader(path)
-            coords, feats = sample['coordinates'], sample['adc']
             if self.train_mode and self.dataset_type == DataPrepType.CLASSIFICATION_AUG:
                 coords, feats = self.augment_single(
                     torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float)
@@ -80,10 +98,7 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             self.dataset_type == DataPrepType.CONTRASTIVE_AUG or
             self.dataset_type == DataPrepType.CONTRASTIVE_AUG_LABELS
         ):
-            path, label = self.samples[index]
-            sample = self.loader(path)
-            coords, feats = sample['coordinates'], np.expand_dims(sample['adc'], axis=1)
-            # no idea why coords is a tensor while feats is a numpy array
+            feats = np.expand_dims(feats, axis=1) # dont know why I am doing this
             xi = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
             xj = (torch.tensor(coords), torch.tensor(feats, dtype=torch.float))
             xi, xj = self.contrastive_augmentations(xi, xj)
