@@ -12,5 +12,5 @@ max_num_workers: 8
 model: "dann"
 save_model: "best"
 
-batch_size: 672
+batch_size: 512
 epochs: 100
