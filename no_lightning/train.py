@@ -176,7 +176,8 @@ def get_dataloaders(data_path, conf):
         os.path.join(data_path, "train"),
         conf.data_prep_type,
         conf.augs, conf.n_augs,
-        conf.quantization_size
+        conf.quantization_size,
+        conf.xtalk
     )
     if conf.data_prep_type == DataPrepType.CLASSIFICATION_AUG:
         val_data_prep_type = DataPrepType.CLASSIFICATION
@@ -187,6 +188,7 @@ def get_dataloaders(data_path, conf):
         val_data_prep_type,
         conf.augs, conf.n_augs,
         conf.quantization_size,
+        conf.xtalk,
         train_mode=False
     )
     if conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG:

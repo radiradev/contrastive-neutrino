@@ -44,13 +44,15 @@ def main(args):
         os.path.join(args.finetune_data_path, "train"),
         dataprep,
         conf.augs, conf.n_augs,
-        conf.quantization_size
+        conf.quantization_size,
+        conf.xtalk
     )
     dataset_val = ThrowsDataset(
         os.path.join(args.finetune_data_path, "val"),
         dataprep,
         conf.augs, conf.n_augs,
         conf.quantization_size,
+        conf.xtalk,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate

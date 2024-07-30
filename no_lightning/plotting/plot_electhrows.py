@@ -27,7 +27,8 @@ def main():
         os.path.join(conf.data_path, "val"),
         conf.data_prep_type,
         conf.augs, conf.n_augs,
-        conf.quantisation_size
+        conf.quantisation_size,
+        conf.xtalk
     )
 
     sample_nom = np.load(NOM_PATH)

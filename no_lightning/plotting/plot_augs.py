@@ -29,7 +29,8 @@ def main():
         os.path.join(conf.data_path, "val"),
         conf.data_prep_type,
         conf.augs, conf.n_augs,
-        conf.quantization_size
+        conf.quantization_size,
+        conf.xtalk
     )
 
     path, _ = dataset.samples[IDX]
