@@ -29,7 +29,9 @@ def main(args):
     train_n_batches = len(dataloader_train)
     val_n_batches = len(dataloader_val)
     if conf.model == "dann":
-        _, dataloader_train_s, _, dataloader_val_s = get_dataloaders(conf.data_path_s, conf)
+        _, dataloader_train_s, _, dataloader_val_s = get_dataloaders(
+            conf.data_path_s, conf, xtalk=conf.xtalk_s
+        )
         train_n_batches = min(train_n_batches, len(dataloader_train_s))
         val_n_batches = min(val_n_batches, len(dataloader_val_s))
 
@@ -171,13 +173,13 @@ def get_print_str(epoch, losses, n_iter, n_iter_tot, t_iter):
         "Losses: total={:.7f}".format(np.mean(losses))
     )
 
-def get_dataloaders(data_path, conf):
+def get_dataloaders(data_path, conf, xtalk=None):
     dataset_train = ThrowsDataset(
         os.path.join(data_path, "train"),
         conf.data_prep_type,
         conf.augs, conf.n_augs,
         conf.quantization_size,
-        conf.xtalk
+        conf.xtalk if xtalk is None else xtalk
     )
     if conf.data_prep_type == DataPrepType.CLASSIFICATION_AUG:
         val_data_prep_type = DataPrepType.CLASSIFICATION
@@ -188,7 +190,7 @@ def get_dataloaders(data_path, conf):
         val_data_prep_type,
         conf.augs, conf.n_augs,
         conf.quantization_size,
-        conf.xtalk,
+        conf.xtalk if xtalk is None else xtalk,
         train_mode=False
     )
     if conf.data_prep_type == DataPrepType.CONTRASTIVE_AUG:
