@@ -21,7 +21,8 @@ defaults = {
     "aug_translate_scale_factor" : 0.3,
     "contrastive_loss_same_label_weight" : 0.5,
     "quantization_size" : 0.38,
-    "xtalk" : None
+    "xtalk" : None,
+    "xtalk_s" : None
 }
 
 mandatory_fields = {
@@ -72,8 +73,11 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
     if conf_dict["model"] == "dann" and conf_dict["data_path_s"] is None:
         raise ValueError("dann models must specifiy source data 'data_path_s'")
   
-    if conf_dict["xtalk"] is not None and conf_dict["xtalk"] > 1.0:
-        raise ValueError("xtalk must be None or <= 1.0")
+    if (
+        conf_dict["xtalk"] is not None and conf_dict["xtalk"] > 1.0 or
+        conf_dict["xtalk_s"] is not None and conf_dict["xtalk_s"] > 1.0
+    )
+        raise ValueError("xtalk and/or xtalk_s must be None or <= 1.0")
 
     if prep_checkpoint_dir:
         conf_dict["checkpoint_dir"] = os.path.join(conf_dict["checkpoints_dir"], conf_dict["name"])
