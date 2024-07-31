@@ -6,6 +6,7 @@ data_prep_type: "contrastive_augmentations"
 quantization_size: 1.0
 xtalk: 0.6
 max_num_workers: 8
+num_classes: 4
 
 augs: ["identity", "rotate", "drop", "shift_energy_byvoxel", "translate_byvoxel"]
 n_augs: 3
