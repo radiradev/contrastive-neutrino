@@ -22,7 +22,8 @@ defaults = {
     "contrastive_loss_same_label_weight" : 0.5,
     "quantization_size" : 0.38,
     "xtalk" : None,
-    "xtalk_s" : None
+    "xtalk_s" : None,
+    "num_classes": 5
 }
 
 mandatory_fields = {
