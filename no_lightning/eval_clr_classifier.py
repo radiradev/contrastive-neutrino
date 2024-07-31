@@ -48,8 +48,8 @@ def main(args):
         os.path.join(args.test_data_path, "test"),
         DataPrepType.CLASSIFICATION,
         [], 0,
-        conf_clr.quantization_size,
-        args.xtalk if args.xtalk is not None else conf_clr.xtalk,
+        conf_classifier.quantization_size,
+        args.xtalk if args.xtalk is not None else conf_classifier.xtalk,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
