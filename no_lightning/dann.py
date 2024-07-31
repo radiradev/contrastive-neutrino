@@ -61,8 +61,6 @@ class ReverseLayerF(torch.autograd.Function):
 
 
 class DANN(nn.Module):
-    num_classes = 5
-
     def __init__(self, conf):
         super().__init__()
 
@@ -70,11 +68,11 @@ class DANN(nn.Module):
         self.checkpoint_dir = conf.checkpoint_dir
 
         self.net = VoxelConvNeXtClassifier(
-            self.num_classes, in_chans=1, D=3, dims=conf.net_dims
+            conf.num_classes, in_chans=1, D=3, dims=conf.net_dims
         ).to(self.device)
         self.net.head = ME.MinkowskiGlobalMaxPooling() # Remove MinkowskiLinear
 
-        self.net_label = nn.Linear(conf.net_dims[-1], self.num_classes).to(self.device)
+        self.net_label = nn.Linear(conf.net_dims[-1], conf.num_classes).to(self.device)
         self.net_domain = nn.Linear(conf.net_dims[-1], 2).to(self.device)
 
         self.revgrad = ReverseLayerF

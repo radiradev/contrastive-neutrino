@@ -8,15 +8,13 @@ import MinkowskiEngine as ME
 from voxel_convnext import VoxelConvNeXtClassifier
 
 class Classifier(nn.Module):
-    num_classes = 5
-
     def __init__(self, conf):
         super().__init__()
 
         self.device = torch.device(conf.device)
         self.checkpoint_dir = conf.checkpoint_dir
 
-        self.net = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=self.num_classes)
+        self.net = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=conf.num_classes)
         self.net.to(self.device)
 
         self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
