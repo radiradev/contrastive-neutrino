@@ -52,12 +52,8 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         for func in funcs_j:
             coords_j, feat_j = func(coords_j, feat_j)
 
-        coords_i, feat_i = sparse_quantize(
-            coords_i, feat_i, quantization_size=self.quantization_size
-        )
-        coords_j, feat_j = sparse_quantize(
-            coords_j, feat_j, quantization_size=self.quantization_size
-        )
+        coords_i, feat_i = self.safe_sparse_quantize(coords_i, feat_i)
+        coords_j, feat_j = self.safe_sparse_quantize(coords_j, feat_j)
 
         return (coords_i, feat_i), (coords_j, feat_j)
 
@@ -74,6 +70,15 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         xtalk_indices = np.where(hit_mask == False)[0]
         random_indices = np.random.choice(xtalk_indices, new_nb_xtalk, replace=False)
         hit_mask[random_indices] = True
+
+    def safe_sparse_quantize(self, coords, feats):
+        coords, feats = sparse_quantize(coords, feats, quantization_size=self.quantization_size)
+        if len(feats.shape) == 1: # Still need feature dimension for single voxel image
+            if isinstance(feats, np.ndarray):
+                feats = np.expand_dims(feats, axis=0)
+            else:
+                feats = torch.unsqueeze(feats, 0)
+        return coords, feats
 
     def __getitem__(self, index: int):
         self.index_history.append(index)
@@ -99,9 +104,7 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
                 coords, feats = self.augment_single(
                     torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float)
                 )
-            coords, feats = sparse_quantize(
-                coords, feats, quantization_size=self.quantization_size
-            )
+            coords, feats = self.safe_sparse_quantize(coords, feats)
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
         elif (
