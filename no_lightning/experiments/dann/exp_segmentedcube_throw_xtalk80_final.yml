@@ -8,6 +8,7 @@ quantization_size: 1.0
 xtalk: 0.8 # unlabelled target
 xtalk_s: 0.5 # labelled source
 max_num_workers: 8
+num_classes: 4
 
 model: "dann"
 save_model: "best"
