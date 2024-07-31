@@ -11,7 +11,7 @@ def rotate(coords, feats):
 
 def drop(coords, feats, p=0.1):
     mask = torch.rand(coords.shape[0]) > p
-    if torch.all(mask).all() == coords.shape[0]: # masking everything out will break forward pass
+    if not mask.sum(): # masking everything out will break forward pass
         return coords, feats
     return coords[mask], feats[mask]
 
