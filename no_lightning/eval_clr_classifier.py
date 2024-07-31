@@ -49,7 +49,7 @@ def main(args):
         DataPrepType.CLASSIFICATION,
         [], 0,
         conf_clr.quantization_size,
-        conf_clr.xtalk,
+        args.xtalk if args.xtalk is not None else conf_clr.xtalk,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
@@ -119,6 +119,7 @@ def parse_arguments():
     parser.add_argument("test_data_path")
 
     parser.add_argument("--classifier_is_dann", action="store_true")
+    parser.add_argument("--xtalk", type=float, default=None)
 
     args = parser.parse_args()
 
