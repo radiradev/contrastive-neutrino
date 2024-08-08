@@ -16,9 +16,9 @@ class SimCLR(nn.Module):
 
         self.net = VoxelConvNeXtCLR(in_chans=1, D=3, dims=conf.net_dims).to(self.device)
 
-        if conf.optimizer = "Adam":
+        if conf.optimizer == "Adam":
             self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
-        elif conf.optimizer = "AdamW":
+        elif conf.optimizer == "AdamW":
             self.optimizer = torch.optim.AdamW(self.parameters(), lr=conf.lr, weight_decay=0.0001)
         else:
             raise ValueError(f"{conf.optimizer} optimizer not implemented!")
