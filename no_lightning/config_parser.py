@@ -11,6 +11,7 @@ defaults = {
     "max_num_workers" : 4,
     "lr_decay_iter" : 0,
     "lr_scheduler": "ExponentialLR",
+    "CosineAnnealingLR_T_max" : 600,
     "optimizer": "Adam",
     "save_model" : "never",
     "net_dims" : [96, 192, 384, 768],
