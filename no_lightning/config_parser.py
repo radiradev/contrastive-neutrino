@@ -10,6 +10,8 @@ defaults = {
     "device" : "cuda:0",
     "max_num_workers" : 4,
     "lr_decay_iter" : 0,
+    "lr_scheduler": "ExponentialLR",
+    "optimizer": "Adam",
     "save_model" : "never",
     "net_dims" : [96, 192, 384, 768],
     "augs" : ["rotate", "drop", "shift_energy_uniform", "translate", "identity"],
