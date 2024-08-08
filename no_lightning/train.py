@@ -93,8 +93,8 @@ def main(args):
                 (n_iter + 1) % conf.lr_decay_iter == 0
             ):
                 model.scheduler_step()
-                # Might want to get rid of this for cosine annealing when called every iteration
-                write_log_str(conf.checkpoint_dir, "LR {}".format(model.scheduler.get_lr()))
+                if conf.lr_decay_iter > 1:
+                    write_log_str(conf.checkpoint_dir, "LR {}".format(model.scheduler.get_lr()))
 
             n_iter += 1
 
