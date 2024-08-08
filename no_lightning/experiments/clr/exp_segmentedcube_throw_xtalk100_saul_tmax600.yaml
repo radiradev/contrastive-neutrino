@@ -15,7 +15,7 @@ aug_energy_scale_factor: 0.1
 model: "sim_clr"
 save_model: "all"
 
-batch_size: 512
+batch_size: 448
 lr_scheduler: "CosineAnnealingLR"
 optimizer: "AdamW"
 lr: 1.0
