@@ -17,8 +17,19 @@ class Classifier(nn.Module):
         self.net = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=conf.num_classes)
         self.net.to(self.device)
 
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
+        if conf.optimizer == "Adam":
+            self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
+        elif conf.optimizer == "AdamW":
+            self.optimizer = torch.optim.AdamW(self.parameters(), lr=conf.lr, weight_decay=0.0001)
+        else:
+            raise ValueError(f"{conf.optimizer} optimizer not implemented!")
+
+        if conf.lr_scheduler == "ExponentialLR":
+            self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
+        elif conf.lr_scheduler == "CosineAnnealingLR":
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, 600)
+        else:
+            raise ValueError(f"{conf.lr_scheduler} lr scheduler not implemented!")
 
         self.criterion = nn.CrossEntropyLoss()
 
