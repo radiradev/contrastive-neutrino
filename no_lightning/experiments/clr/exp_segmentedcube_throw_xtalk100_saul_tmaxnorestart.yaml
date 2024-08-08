@@ -1,0 +1,24 @@
+name: "clr_segmentedcube_throw_xtalk100_saul_tmaxnorestart"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/clr"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_larger"
+data_prep_type: "contrastive_augmentations"
+quantization_size: 1.0
+xtalk: 1.0
+max_num_workers: 8
+num_classes: 4
+
+augs: ["identity", "rotate", "drop", "shift_energy_uniform", "translate"]
+n_augs: 2
+aug_energy_scale_factor: 0.1
+
+model: "sim_clr"
+save_model: "all"
+
+batch_size: 448
+lr_scheduler: "CosineAnnealingLR"
+CosineAnnealingLR_T_max: 200"
+optimizer: "AdamW"
+lr: 1.0
+lr_decay_iter: "epoch"
+epochs: 200
