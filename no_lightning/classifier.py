@@ -27,7 +27,9 @@ class Classifier(nn.Module):
         if conf.lr_scheduler == "ExponentialLR":
             self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, 0.95)
         elif conf.lr_scheduler == "CosineAnnealingLR":
-            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, 600)
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                self.optimizer, conf.CosineAnnealingLR_T_max
+            )
         else:
             raise ValueError(f"{conf.lr_scheduler} lr scheduler not implemented!")
 
