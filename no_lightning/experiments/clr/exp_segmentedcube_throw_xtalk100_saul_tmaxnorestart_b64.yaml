@@ -17,7 +17,7 @@ save_model: "all"
 
 batch_size: 64
 lr_scheduler: "CosineAnnealingLR"
-CosineAnnealingLR_T_max: 200"
+CosineAnnealingLR_T_max: 200
 optimizer: "AdamW"
 lr: 1.0
 lr_decay_iter: "epoch"
