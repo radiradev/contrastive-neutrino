@@ -25,6 +25,12 @@ def main(args):
     else:
         raise ValueError("model must be ['sim_clr', 'classifier', 'dann']")
 
+    print(
+        "Encoder has {:.1f} million parameters".format(
+            sum(params.numel() for params in model.net.parameters()) / 1e6
+        )
+    )
+
     _, dataloader_train, _, dataloader_val = get_dataloaders(conf.data_path, conf)
     train_n_batches = len(dataloader_train)
     val_n_batches = len(dataloader_val)
