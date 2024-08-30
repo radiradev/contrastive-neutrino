@@ -1,4 +1,4 @@
-name: "clr_segmentedcube_nominal_xtalk50_test_labels_5"
+name: "clr_segmentedcube_nominal_xtalk50_test_labels_4"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/clr"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube"
