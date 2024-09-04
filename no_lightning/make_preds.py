@@ -50,11 +50,11 @@ def main(args):
         DataPrepType.CLASSIFICATION,
         [], 0,
         conf.quantization_size,
-        xtalk=conf.xtalk,
+        args.xtalk if args.xtalk is not None else conf.xtalk,
         train_mode=False
     )
     collate_fn = ME.utils.batch_sparse_collate
-    dataloader= DataLoader(
+    dataloader = DataLoader(
         dataset,
         batch_size=conf.batch_size,
         shuffle=True,
@@ -133,6 +133,7 @@ def parse_arguments():
     group.add_argument("--dann", action="store_true")
 
     parser.add_argument("--finetune_pickle", type=str, default=None)
+    parser.add_argument("--xtalk", type=float, default=None)
 
     args = parser.parse_args()
 
