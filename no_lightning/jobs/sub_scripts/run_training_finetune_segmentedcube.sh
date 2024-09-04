@@ -9,9 +9,13 @@
 
 CONFIG_FILE=$1
 CHKPT_PATH=$2
+NOMINAL_XTALK=$3
 
 NOMINAL_DATASET="/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube"
-NOMINAL_XTALK=0.5
+if [ -z "$NOMINAL_XTALK" ]
+then
+  NOMINAL_XTALK=0.5
+fi
 
 echo $SLURMD_NODENAME
 echo $CUDA_VISIBLE_DEVICES
