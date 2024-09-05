@@ -26,7 +26,8 @@ defaults = {
     "quantization_size" : 0.38,
     "xtalk" : None,
     "xtalk_s" : None,
-    "num_classes": 5
+    "num_classes" : 5,
+    "specify_loss" : None
 }
 
 mandatory_fields = {

@@ -3,7 +3,7 @@ import os
 import torch; import torch.nn as nn
 import MinkowskiEngine as ME
 
-from loss import contrastive_loss, contrastive_loss_class_labels
+from loss import contrastive_loss, contrastive_loss_class_labels, contrastive_loss_class_labels_out
 from voxel_convnext import VoxelConvNeXtCLR
 from dataset import DataPrepType
 
@@ -37,6 +37,12 @@ class SimCLR(nn.Module):
             self.crit_same_label_weight = conf.contrastive_loss_same_label_weight
         else:
             self.criterion = contrastive_loss
+
+        if conf.specify_loss is not None:
+            if conf.specify_loss == "contrastive_loss_class_labels_out":
+                self.criterion = contrastive_loss_class_labels_out
+            else:
+                raise ValueError(f"{conf.specify_loss} loss is not defined")
 
         self.loss = None
 
