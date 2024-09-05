@@ -18,5 +18,5 @@ aug_translate_scale_factor: 1.0
 model: "sim_clr"
 save_model: "all"
 
-batch_size: 512
+batch_size: 496
 epochs: 300
