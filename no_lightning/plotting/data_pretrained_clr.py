@@ -12,16 +12,26 @@ matplotlib.rcParams['axes.prop_cycle'] = matplotlib.cycler(color=['#377eb8', '#f
 
 CHECKPOINT_DIR = "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints"
 
-CLASSIFIER = "classifier/classifier_nominal_final_standardaugs"
+# CLASSIFIER = "classifier/classifier_nominal_final_standardaugs"
+CLASSIFIER = "classifier/classifier_nominal_final_standardaugs_30epoch"
 NOTRAIN_CLR = "clr/clr_notrain"
+# CLRS = {
+#     "nominal" : "clr/clr_nominal_final_standardaugs",
+#     "electhrow1" : "clr/clr_electhrow1_final_standardaugs",
+#     "electhrow3" : "clr/clr_electhrow3_final_standardaugs",
+#     "electhrow4" : "clr/clr_electhrow4_final_standardaugs",
+#     "electhrow5" : "clr/clr_electhrow5_final_standardaugs",
+#     "electhrow6" : "clr/clr_electhrow6_final_standardaugs",
+#     "electhrow7" : "clr/clr_electhrow7_final_standardaugs"
+# }
 CLRS = {
-    "nominal" : "clr/clr_nominal_final_standardaugs",
-    "electhrow1" : "clr/clr_electhrow1_final_standardaugs",
-    "electhrow3" : "clr/clr_electhrow3_final_standardaugs",
-    "electhrow4" : "clr/clr_electhrow4_final_standardaugs",
-    "electhrow5" : "clr/clr_electhrow5_final_standardaugs",
-    "electhrow6" : "clr/clr_electhrow6_final_standardaugs",
-    "electhrow7" : "clr/clr_electhrow7_final_standardaugs"
+    "nominal" : "clr/clr_nominal_labels_weight1-0_300epoch",
+    "electhrow1" : "clr/clr_nominal_labels_weight1-0_300epoch",
+    "electhrow3" : "clr/clr_nominal_labels_weight1-0_300epoch",
+    "electhrow4" : "clr/clr_nominal_labels_weight1-0_300epoch",
+    "electhrow5" : "clr/clr_nominal_labels_weight1-0_300epoch",
+    "electhrow6" : "clr/clr_nominal_labels_weight1-0_300epoch",
+    "electhrow7" : "clr/clr_nominal_labels_weight1-0_300epoch"
 }
 DANNS = {
     "nominal" : "dann/dann_nominal_final",
@@ -80,7 +90,7 @@ def main():
         x - (width + spacing), nominal_accs, width, label="Nominal Classifier"
     )
     rects2 = ax[1].bar(
-        x, clr_accs, width, label="Contrastive Pretraining"
+        x, clr_accs, width, label="Contrastive Pretraining w/ labels"
     )
     rects3 = ax[1].bar(
         x + (width + spacing), dann_accs, width, label="DANN"
