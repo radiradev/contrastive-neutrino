@@ -20,7 +20,7 @@ CLASSIFIER_XTALK100 = "classifier/classifier_segmentedcube_nominal_xtalk100_fina
 CLR_XTALK0 = "clr/clr_segmentedcube_nominal_xtalk0_labels_final"
 CLR_XTALK25 = "clr/clr_segmentedcube_nominal_xtalk25_labels_final"
 CLR_XTALK50 = "clr/clr_segmentedcube_nominal_xtalk50_labels_final"
-CLR_XTALK70 = "clr/clr_segmentedcube_nominal_xtalk75_labels_final"
+CLR_XTALK75 = "clr/clr_segmentedcube_nominal_xtalk75_labels_final"
 CLR_XTALK100 = "clr/clr_segmentedcube_nominal_xtalk100_labels_final"
 DATASETS = [
     "xtalk0",
@@ -49,24 +49,24 @@ DATASETS = [
 
 def main():
     clr_accs_xt0, clr_accs_xt25, clr_accs_xt50, clr_accs_xt75, clr_accs_xt100 = [], [], [], [], []
-    clf_accs_xt0, clf_accs_xt25, clf_accs_xt50, clr_accs_xt75, clf_accs_xt100 = [], [], [], [], []
+    clf_accs_xt0, clf_accs_xt25, clf_accs_xt50, clf_accs_xt75, clf_accs_xt100 = [], [], [], [], []
     for dataset in tqdm(DATASETS):
         clf_preds_path_xt0 = os.path.join(
             CHECKPOINT_DIR, CLASSIFIER_XTALK0, "test_results", f"preds_{dataset}.yml"
         )
         clf_accs_xt0.append(get_acc(clf_preds_path_xt0))
-        # clf_preds_path_xt25 = os.path.join(
-        #     CHECKPOINT_DIR, CLASSIFIER_XTALK25, "test_results", f"preds_{dataset}.yml"
-        # )
+        clf_preds_path_xt25 = os.path.join(
+            CHECKPOINT_DIR, CLASSIFIER_XTALK25, "test_results", f"preds_{dataset}.yml"
+        )
         clf_accs_xt25.append(get_acc(clf_preds_path_xt25))
         clf_preds_path_xt50 = os.path.join(
             CHECKPOINT_DIR, CLASSIFIER_XTALK50, "test_results", f"preds_{dataset}.yml"
         )
         clf_accs_xt50.append(get_acc(clf_preds_path_xt50))
-        # clf_preds_path_xt75 = os.path.join(
-        #     CHECKPOINT_DIR, CLASSIFIER_XTALK75, "test_results", f"preds_{dataset}.yml"
-        # )
-        # clf_accs_xt75.append(get_acc(clf_preds_path_xt75))
+        clf_preds_path_xt75 = os.path.join(
+            CHECKPOINT_DIR, CLASSIFIER_XTALK75, "test_results", f"preds_{dataset}.yml"
+        )
+        clf_accs_xt75.append(get_acc(clf_preds_path_xt75))
         clf_preds_path_xt100 = os.path.join(
             CHECKPOINT_DIR, CLASSIFIER_XTALK100, "test_results", f"preds_{dataset}.yml"
         )
@@ -101,7 +101,6 @@ def main():
     ax.text(0.025, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
     ax.plot(x, clr_accs_xt0, marker="o", label="Contrastive Pretraining")
     ax.plot(x, clf_accs_xt0, marker="o", label="Classifier")
-    ax.set_xticks(x)
     ax.set_xlabel("Crosstalk Fraction", fontsize=13)
     ax.set_ylabel("Acc.", fontsize=13)
     ax.grid(axis="both")
@@ -116,8 +115,7 @@ def main():
     ax.axvline(0.25, c="r", label="_")
     ax.text(0.275, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
     ax.plot(x, clr_accs_xt25, marker="o", label="Contrastive Pretraining")
-    # ax.plot(x, clf_accs_xt25, marker="o", label="Classifier")
-    ax.set_xticks(x)
+    ax.plot(x, clf_accs_xt25, marker="o", label="Classifier")
     ax.set_xlabel("Crosstalk Fraction", fontsize=13)
     ax.set_ylabel("Acc.", fontsize=13)
     ax.grid(axis="both")
@@ -133,7 +131,6 @@ def main():
     ax.text(0.525, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
     ax.plot(x, clr_accs_xt50, marker="o", label="Contrastive Pretraining")
     ax.plot(x, clf_accs_xt50, marker="o", label="Classifier")
-    ax.set_xticks(x)
     ax.set_xlabel("Crosstalk Fraction", fontsize=13)
     ax.set_ylabel("Acc.", fontsize=13)
     ax.grid(axis="both")
@@ -148,8 +145,7 @@ def main():
     ax.axvline(0.75, c="r", label="_")
     ax.text(0.775, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
     ax.plot(x, clr_accs_xt75, marker="o", label="Contrastive Pretraining")
-    # ax.plot(x, clf_accs_xt75, marker="o", label="Classifier")
-    ax.set_xticks(x)
+    ax.plot(x, clf_accs_xt75, marker="o", label="Classifier")
     ax.set_xlabel("Crosstalk Fraction", fontsize=13)
     ax.set_ylabel("Acc.", fontsize=13)
     ax.grid(axis="both")
@@ -161,11 +157,10 @@ def main():
 
     # xtalk 100
     fig, ax = plt.subplots(1, 1, figsize=(12, 7))
-    ax.axvline(1.0 c="r", label="_")
+    ax.axvline(1.0, c="r", label="_")
     ax.text(0.975, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
     ax.plot(x, clr_accs_xt100, marker="o", label="Contrastive Pretraining")
     ax.plot(x, clf_accs_xt100, marker="o", label="Classifier")
-    ax.set_xticks(x)
     ax.set_xlabel("Crosstalk Fraction", fontsize=13)
     ax.set_ylabel("Acc.", fontsize=13)
     ax.grid(axis="both")
