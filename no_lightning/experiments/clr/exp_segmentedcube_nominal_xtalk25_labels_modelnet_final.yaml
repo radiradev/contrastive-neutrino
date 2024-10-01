@@ -1,11 +1,11 @@
-name: "clr_test"
+name: "clr_segmentedcube_nominal_xtalk25_labels_modelnet_final"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/clr"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube"
 data_prep_type: "contrastive_augmentations_labels"
 quantization_size: 1.0
-xtalk: 1.0
-max_num_workers: 0
+xtalk: 0.25
+max_num_workers: 8
 num_classes: 4
 
 contrastive_loss_same_label_weight: 1.0
@@ -18,9 +18,7 @@ aug_translate_scale_factor: 1.0
 model: "sim_clr"
 net_architecture: "modelnet"
 net_dims: 768
-# save_model: "all"
-# specify_loss: "contrastive_loss_class_labels_out"
+save_model: "all"
 
-batch_size: 256
-epochs: 200
-
+batch_size: 512
+epochs: 300
