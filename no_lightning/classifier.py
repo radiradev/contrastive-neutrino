@@ -6,7 +6,7 @@ import torch; import torch.nn as nn
 import MinkowskiEngine as ME
 
 from voxel_convnext import VoxelConvNeXtClassifier
-from modelnet import MinkowskiFCNNCLR
+from modelnet import MinkowskiFCNNClassifier
 
 class Classifier(nn.Module):
     def __init__(self, conf):
