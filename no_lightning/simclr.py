@@ -5,6 +5,7 @@ import MinkowskiEngine as ME
 
 from loss import contrastive_loss, contrastive_loss_class_labels, contrastive_loss_class_labels_out
 from voxel_convnext import VoxelConvNeXtCLR
+from modelnet import MinkowskiFCNNCLR
 from dataset import DataPrepType
 
 class SimCLR(nn.Module):
@@ -14,7 +15,17 @@ class SimCLR(nn.Module):
         self.device = torch.device(conf.device)
         self.checkpoint_dir = conf.checkpoint_dir
 
-        self.net = VoxelConvNeXtCLR(in_chans=1, D=3, dims=conf.net_dims).to(self.device)
+        if conf.net_architecture == "convnext":
+            self.net = VoxelConvNeXtCLR(in_chans=1, D=3, dims=conf.net_dims).to(self.device)
+            self._create_tensor = self._create_sparsetensor
+        elif conf.net_architecture == "modelnet40":
+            assert isinstance(conf.net_dims, int), "net_dims should be an int for modelnet40"
+            self.net = MinkowskiFCNNCLR(
+                in_channel=1, D=3, embedding_channel=conf.net_dims
+            ).to(self.device)
+            self._create_tensor = self._create_tensorfield
+        else:
+            raise ValueError(f"{conf.net_architecture} network architecture not implemented!")
 
         if conf.optimizer == "Adam":
             self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
@@ -110,11 +121,14 @@ class SimCLR(nn.Module):
         self.loss.backward()
         self.optimizer.step()
 
-    def _create_tensor(self, features, coordinates):
+    def _create_sparsetensor(self, features, coordinates):
         return ME.SparseTensor(
-            features=features.float(),
-            coordinates=coordinates,
-            device=self.device
+            features=features.float(), coordinates=coordinates, device=self.device
+        )
+
+    def _create_tensorfield(self, features, coordinates):
+        return ME.TensorField(
+            features=features.float(), coordinates=coordinates, device=self.device
         )
 
     def _calc_loss(self):

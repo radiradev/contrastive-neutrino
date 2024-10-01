@@ -6,6 +6,7 @@ import torch; import torch.nn as nn
 import MinkowskiEngine as ME
 
 from voxel_convnext import VoxelConvNeXtClassifier
+from modelnet import MinkowskiFCNNCLR
 
 class Classifier(nn.Module):
     def __init__(self, conf):
@@ -14,8 +15,19 @@ class Classifier(nn.Module):
         self.device = torch.device(conf.device)
         self.checkpoint_dir = conf.checkpoint_dir
 
-        self.net = VoxelConvNeXtClassifier(in_chans=1, D=3, num_classes=conf.num_classes)
-        self.net.to(self.device)
+        if conf.net_architecture == "convnext":
+            self.net = VoxelConvNeXtClassifier(
+                in_chans=1, D=3, dims=conf.net_dims, num_classes=conf.num_classes
+            ).to(self.device)
+            self._create_tensor = self._create_sparsetensor
+        elif conf.net_architecture == "modelnet40":
+            assert isinstance(conf.net_dims, int), "net_dims should be an int for modelnet40"
+            self.net = MinkowskiFCNNClassifier(
+                in_channel=1, D=3, embedding_channel=conf.net_dims, num_classes=conf.num_classes
+            ).to(self.device)
+            self._create_tensor = self._create_tensorfield
+        else:
+            raise ValueError(f"{conf.net_architecture} network architecture not implemented!")
 
         if conf.optimizer == "Adam":
             self.optimizer = torch.optim.Adam(self.parameters(), lr=conf.lr)
@@ -44,9 +56,9 @@ class Classifier(nn.Module):
 
     def set_input(self, data):
         self.data = data
-        coords, feats, labels  = data
+        coords, feats, labels = data
         self.target_out = labels.to(self.device)
-        self.s_in = ME.SparseTensor(coordinates=coords, features=feats.float(), device=self.device)
+        self.s_in = self._create_tensor(feats, coords)
 
     def eval(self):
         self.net.eval()
@@ -93,3 +105,13 @@ class Classifier(nn.Module):
         self.loss = self.criterion(self.pred_out, self.target_out)
         self.loss.backward()
         self.optimizer.step()
+
+    def _create_sparsetensor(self, features, coordinates):
+        return ME.SparseTensor(
+            features=features.float(), coordinates=coordinates, device=self.device
+        )
+
+    def _create_tensorfield(self, features, coordinates):
+        return ME.TensorField(
+            features=features.float(), coordinates=coordinates, device=self.device
+        )
