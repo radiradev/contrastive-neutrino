@@ -16,7 +16,7 @@ aug_energy_scale_factor: 0.25
 aug_translate_scale_factor: 1.0
 
 model: "sim_clr"
-net_architecture: "modelnet"
+net_architecture: "modelnet40"
 net_dims: 768
 # save_model: "all"
 # specify_loss: "contrastive_loss_class_labels_out"
