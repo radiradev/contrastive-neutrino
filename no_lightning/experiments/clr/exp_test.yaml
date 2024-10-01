@@ -1,19 +1,26 @@
 name: "clr_test"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/clr"
 
-data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube"
 data_prep_type: "contrastive_augmentations_labels"
+quantization_size: 1.0
+xtalk: 1.0
 max_num_workers: 0
+num_classes: 4
+
+contrastive_loss_same_label_weight: 1.0
 
 augs: ["identity", "rotate", "drop", "shift_energy_byvoxel", "translate_byvoxel"]
 n_augs: 3
-aug_energy_scale_factor: 0.3
-aug_translate_scale_factor: 0.5
+aug_energy_scale_factor: 0.25
+aug_translate_scale_factor: 1.0
 
 model: "sim_clr"
+net_architecture: "convnext"
+# net_dims: 768
 # save_model: "all"
-specify_loss: "contrastive_loss_class_labels_out"
+# specify_loss: "contrastive_loss_class_labels_out"
 
-batch_size: 4
+batch_size: 256
 epochs: 200
 
