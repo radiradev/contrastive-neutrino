@@ -16,7 +16,9 @@ class SimCLR(nn.Module):
         self.checkpoint_dir = conf.checkpoint_dir
 
         if conf.net_architecture == "convnext":
-            self.net = VoxelConvNeXtCLR(in_chans=1, D=3, dims=conf.net_dims).to(self.device)
+            self.net = VoxelConvNeXtCLR(
+                in_chans=1, D=3, dims=conf.net_dims, depths=conf.net_depths
+            ).to(self.device)
             self._create_tensor = self._create_sparsetensor
         elif conf.net_architecture == "modelnet40":
             assert isinstance(conf.net_dims, int), "net_dims should be an int for modelnet40"
