@@ -14,8 +14,9 @@ aug_energy_scale_factor: 0.25
 aug_translate_scale_factor: 1.0
 
 model: "classifier"
-net_architecture: "modelnet40"
-net_dims: 768
+net_architecture: "convnext"
+net_dims: [48, 96, 192, 384]
+net_depths: [2, 2, 6, 2]
 # save_model: "all"
 # specify_loss: "contrastive_loss_class_labels_out"
 

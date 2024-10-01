@@ -15,6 +15,7 @@ defaults = {
     "optimizer": "Adam",
     "save_model" : "never",
     "net_dims" : [96, 192, 384, 768],
+    "net_depths" : [3, 3, 9, 3],
     "augs" : ["rotate", "drop", "shift_energy_uniform", "translate", "identity"],
     "n_augs" : 2,
     "data_path_s" : None,

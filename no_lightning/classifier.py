@@ -17,7 +17,11 @@ class Classifier(nn.Module):
 
         if conf.net_architecture == "convnext":
             self.net = VoxelConvNeXtClassifier(
-                in_chans=1, D=3, dims=conf.net_dims, num_classes=conf.num_classes
+                in_chans=1,
+                D=3,
+                dims=conf.net_dims,
+                depths=conf.net_depths,
+                num_classes=conf.num_classes
             ).to(self.device)
             self._create_tensor = self._create_sparsetensor
         elif conf.net_architecture == "modelnet40":

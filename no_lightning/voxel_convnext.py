@@ -147,7 +147,7 @@ class VoxelConvNeXtClassifier(VoxelConvNeXt):
        super().__init__(*args, grn=False, **kwargs)
        self.head = nn.Sequential(
            MinkowskiGlobalMaxPooling(),
-           MinkowskiLinear(768, num_classes)
+           MinkowskiLinear(self.dims[-1], num_classes)
        )
    def forward(self, x):
         for i in range(4):
