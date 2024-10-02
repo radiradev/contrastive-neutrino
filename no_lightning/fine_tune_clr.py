@@ -79,7 +79,6 @@ def main(args):
         for batch_coords, batch_feats, batch_labels in tqdm(dataloader_train, desc="train data"):
             batch_coords = batch_coords.to(device)
             batch_feats = batch_feats.to(device)
-            # stensor = ME.SparseTensor(features=batch_feats.float(), coordinates=batch_coords)
             stensor = model._create_tensor(batch_feats, batch_coords)
             out = network(stensor)
             feats.append(out.detach().cpu())
@@ -93,7 +92,6 @@ def main(args):
         for batch_coords, batch_feats, batch_labels in tqdm(dataloader_val, desc="val data"):
             batch_coords = batch_coords.to(device)
             batch_feats = batch_feats.to(device)
-            # stensor = ME.SparseTensor(features=batch_feats.float(), coordinates=batch_coords)
             stensor = model._create_tensor(batch_feats, batch_coords)
             out = network(stensor)
             feats.append(out.detach().cpu())

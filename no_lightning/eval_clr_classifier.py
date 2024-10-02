@@ -69,7 +69,7 @@ def main(args):
         for batch_coords, batch_feats, batch_labels in tqdm(dataloader):
             batch_coords = batch_coords.to(device)
             batch_feats = batch_feats.to(device)
-            stensor = ME.SparseTensor(features=batch_feats.float(), coordinates=batch_coords)
+            stensor = model_clr._create_tensor(batch_feats, batch_coords)
             out = network_clr(stensor)
             feats.append(out.detach().cpu())
             batch_labels = torch.tensor(batch_labels).long()
