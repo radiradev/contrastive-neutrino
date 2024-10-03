@@ -1,0 +1,17 @@
+name: "classifier_segmentedcube_nominal_xtalk50_dogshitnet_mode3"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube"
+data_prep_type: "classification"
+quantization_size: 1.0
+xtalk: 0.5
+max_num_workers: 8
+num_classes: 4
+
+model: "classifier"
+net_architecture: "dogshitnet"
+dogshitnet_mode: 3
+save_model: "all"
+
+batch_size: 512
+epochs: 100
