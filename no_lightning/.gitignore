@@ -1,5 +1,6 @@
 *.pth
 !checkpoints/
+*.swp
 
 jobs/logs
 
