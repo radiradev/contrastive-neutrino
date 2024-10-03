@@ -92,13 +92,17 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
             if self.xtalk < 1.0:
                 self.filter_crosstalk(hit_mask)
                 reco_hits = reco_hits[hit_mask]
-            coords, feats = reco_hits[:, :3], reco_hits[:, 3].reshape(-1, 1)
-        else:
+            if self.dataset_type != DataPrepType.CLASSIFICATION_SANITYCHECK_NOADC:
+                coords, feats = reco_hits[:, :3], reco_hits[:, 3].reshape(-1, 1)
+            else:
+                coords, feats = reco_hits[:, :3], np.ones_like(reco_hits[:, 3].reshape(-1, 1))
+        else: # larnd-sim data
             coords, feats = sample["coordinates"], np.expand_dims(sample["adc"], axis=1)
 
         if (
             self.dataset_type == DataPrepType.CLASSIFICATION or
-            self.dataset_type == DataPrepType.CLASSIFICATION_AUG
+            self.dataset_type == DataPrepType.CLASSIFICATION_AUG or
+            self.dataset_type == DataPrepType.CLASSIFICATION_SANITYCHECK_NOADC
         ):
             if self.train_mode and self.dataset_type == DataPrepType.CLASSIFICATION_AUG:
                 coords, feats = self.augment_single(
@@ -124,3 +128,4 @@ class DataPrepType(Enum):
     CLASSIFICATION = 2
     CLASSIFICATION_AUG = 3
     CONTRASTIVE_AUG_LABELS = 4
+    CLASSIFICATION_SANITYCHECK_NOADC = 5
