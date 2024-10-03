@@ -67,8 +67,6 @@ def get_config(conf_file, overwrite_dict={}, prep_checkpoint_dir=True):
         conf_dict["data_prep_type"] = DataPrepType.CLASSIFICATION_AUG
     elif conf_dict["data_prep_type"] == "contrastive_augmentations_labels":
         conf_dict["data_prep_type"] = DataPrepType.CONTRASTIVE_AUG_LABELS
-    elif conf_dict["data_prep_type"] == "classification_sanitycheck_noadc":
-        conf_dict["data_prep_type"] = DataPrepType.CLASSIFICATION_SANITYCHECK_NOADC
     else:
         raise ValueError("data_prep_type={} not recognised".format(conf_dict["data_prep_type"]))
 
