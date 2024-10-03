@@ -29,7 +29,8 @@ defaults = {
     "xtalk_s" : None,
     "num_classes" : 5,
     "specify_loss" : None,
-    "net_architecture" : "convnext"
+    "net_architecture" : "convnext",
+    "dogshitnet_mode" : 1
 }
 
 mandatory_fields = {

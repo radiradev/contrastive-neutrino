@@ -7,6 +7,7 @@ import MinkowskiEngine as ME
 
 from voxel_convnext import VoxelConvNeXtClassifier
 from modelnet import MinkowskiFCNNClassifier
+from dogshitnet import DogShitNet69Classifier
 
 class Classifier(nn.Module):
     def __init__(self, conf):
@@ -30,6 +31,11 @@ class Classifier(nn.Module):
                 in_channel=1, D=3, embedding_channel=conf.net_dims, num_classes=conf.num_classes
             ).to(self.device)
             self._create_tensor = self._create_tensorfield
+        elif conf.net_architecture == "dogshitnet":
+            self.net = DogShitNet69Classifier(
+                mode=conf.dogshitnet_mode, num_classes=conf.num_classes
+            ).to(self.device)
+            self._create_tensor = self._create_sparsetensor
         else:
             raise ValueError(f"{conf.net_architecture} network architecture not implemented!")
 
