@@ -16,4 +16,4 @@ save_model: "all"
 batch_size: 512
 epochs: 50
 
-# NOTE editing code to set features to np.ones_like for this job
+# NOTE editing code to set features to np.random.randn for this job
