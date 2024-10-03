@@ -60,7 +60,7 @@ def main(args):
         shuffle=True,
         collate_fn=collate_fn,
         num_workers=min(conf_clr.max_num_workers, batch_size),
-        drop_last=True
+        drop_last=False
     )
 
     print("Getting simCLR representations of data...")
