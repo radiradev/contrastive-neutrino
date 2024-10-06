@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 import MinkowskiEngine as ME
+from sklearn.metrics import accuracy_score
 
 from config_parser import get_config
 from simclr import SimCLR
@@ -114,7 +115,7 @@ def main(args):
             write_log_str(conf.checkpoint_dir, loss_str)
             losses = []
 
-        losses_val = []
+        losses_val, pred_labels_val, target_labels_val = [], [], []
 
         # Save latest network
         if conf.save_model in ["latest", "all"]:
@@ -146,11 +147,20 @@ def main(args):
                 continue
 
             losses_val.append(model.get_current_loss())
+            if conf.model == "classifier":
+                vis = model.get_current_visuals()
+                pred_labels_val.append(vis["pred_out"].argmax(axis=1))
+                target_labels_val.append(vis["target_out"])
 
         loss_str = (
             "Validation with {} images:\n".format(len(dataloader_val.dataset)) +
             "Losses: total={:.7f}".format(np.mean(losses_val))
         )
+        if conf.model == "classifier":
+            preds = torch.cat(pred_labels_val).detach().cpu().numpy()
+            labels = torch.cat(target_labels_val).detach().cpu().numpy()
+            acc = accuracy_score(preds, labels)
+            loss_str += "\nAcc: {:.7f}".format(acc)
         write_log_str(conf.checkpoint_dir, loss_str)
 
         if conf.save_model in ["best", "all"]:
