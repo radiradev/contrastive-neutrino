@@ -211,6 +211,97 @@ class DogShitNet69(nn.Module):
             )
             self.pool = ME.MinkowskiMaxPooling(kernel_size=3, stride=2, dimension=3)
             self.embedding_channel = 768
+
+        elif mode == 4:
+            self.conv_initial = nn.Sequential(
+                ME.MinkowskiConvolution(
+                    1,
+                    2,
+                    kernel_size=3,
+                    stride=1,
+                    dimension=3,
+                ),
+                ME.MinkowskiBatchNorm(2),
+                ME.MinkowskiReLU()
+            )
+            self.conv1 = nn.Sequential(
+                ME.MinkowskiConvolution(
+                    2,
+                    4,
+                    kernel_size=3,
+                    stride=2,
+                    dimension=3,
+                ),
+                ME.MinkowskiBatchNorm(4),
+                ME.MinkowskiReLU()
+            )
+            self.conv2 = nn.Sequential(
+                ME.MinkowskiConvolution(
+                    4,
+                    8,
+                    kernel_size=3,
+                    stride=2,
+                    dimension=3,
+                ),
+                ME.MinkowskiBatchNorm(8),
+                ME.MinkowskiReLU()
+            )
+            self.conv3 = nn.Sequential(
+                ME.MinkowskiConvolution(
+                    8,
+                    16,
+                    kernel_size=3,
+                    stride=2,
+                    dimension=3,
+                ),
+                ME.MinkowskiBatchNorm(16),
+                ME.MinkowskiReLU()
+            )
+            self.conv4 = nn.Identity()
+            self.conv5 = nn.Identity()
+            self.pool = ME.MinkowskiMaxPooling(kernel_size=3, stride=2, dimension=3)
+            self.embedding_channel = 16
+
+        elif mode == 5:
+            self.conv_initial = nn.Sequential(
+                ME.MinkowskiConvolution(
+                    1,
+                    2,
+                    kernel_size=3,
+                    stride=1,
+                    dimension=3,
+                ),
+                ME.MinkowskiBatchNorm(2),
+                ME.MinkowskiReLU()
+            )
+            self.conv1 = nn.Sequential(
+                ME.MinkowskiConvolution(
+                    2,
+                    4,
+                    kernel_size=3,
+                    stride=2,
+                    dimension=3,
+                ),
+                ME.MinkowskiBatchNorm(4),
+                ME.MinkowskiReLU()
+            )
+            self.conv2 = nn.Sequential(
+                ME.MinkowskiConvolution(
+                    4,
+                    8,
+                    kernel_size=3,
+                    stride=2,
+                    dimension=3,
+                ),
+                ME.MinkowskiBatchNorm(8),
+                ME.MinkowskiReLU()
+            )
+            self.conv3 = nn.Identity()
+            self.conv4 = nn.Identity()
+            self.conv5 = nn.Identity()
+            self.pool = ME.MinkowskiMaxPooling(kernel_size=3, stride=2, dimension=3)
+            self.embedding_channel = 8
+
         else:
             raise ValueError(f"mode={mode} not a valid dogshitnet mode :(")
 
