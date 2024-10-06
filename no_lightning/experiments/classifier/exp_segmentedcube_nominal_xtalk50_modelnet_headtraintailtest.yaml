@@ -1,4 +1,4 @@
-name: "classifier_segmentedcube_nominal_xtalk50_modelnet_randomsample_headtraintailtest"
+name: "classifier_segmentedcube_nominal_xtalk50_modelnet_headtraintailtest"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_headtraintailtest"
