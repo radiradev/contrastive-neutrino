@@ -87,13 +87,16 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
 
         # Working with segmentedcube data where we vary the crosstalk as a throw
         if self.xtalk is not None:
+            # reco_hits = sample["reco_hits"][:10, :]
+            # hit_mask = sample["Tag_Trk"][:10]
             reco_hits = sample["reco_hits"]
             hit_mask = sample["Tag_Trk"]
+            true_vtx = sample["TrueIniPos"]
             if self.xtalk < 1.0:
                 self.filter_crosstalk(hit_mask)
                 reco_hits = reco_hits[hit_mask]
             coords, feats = reco_hits[:, :3], reco_hits[:, 3].reshape(-1, 1)
-            # coords, feats = reco_hits[:, :3], np.random.randn(*reco_hits[:, 3].reshape(-1, 1).shape)
+            coords -= (true_vtx + np.random.uniform(-2000., 2000., 3)) # new random vertex in detector
         else: # larnd-sim data
             coords, feats = sample["coordinates"], np.expand_dims(sample["adc"], axis=1)
 
@@ -106,6 +109,9 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
                     torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float)
                 )
             coords, feats = self.safe_sparse_quantize(coords, feats)
+            # print(label)
+            # print(coords)
+            # print()
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
         elif (
