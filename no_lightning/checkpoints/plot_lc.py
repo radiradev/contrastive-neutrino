@@ -16,9 +16,8 @@ def main(args):
     else:
         iters_per_epoch = args.iters_per_epoch
 
+    curr_epoch = 0
     for i_line, line in enumerate(losses):
-        if i_line + 3 >= len(losses):
-            break
 
         if line.startswith("Epoch: "):
             epoch = int(line.split("Epoch: ")[1].split(",")[0])
@@ -27,12 +26,12 @@ def main(args):
             tot_loss = float(loss_line.split("total=")[1].split(" ")[0])
             training_epochs.append(epoch + iter / iters_per_epoch)
             training_losses.append(tot_loss)
+            curr_epoch = epoch
 
         if line == "== Validation Loop ==":
             loss_line = losses[i_line + 2]
             tot_loss = float(loss_line.split("total=")[1].split(" ")[0])
-            epoch_line = losses[i_line + 3]
-            epoch = int(epoch_line.split("Epoch ")[1].split(" ")[0])
+            epoch = curr_epoch + 1
             validation_epochs.append(epoch)
             validation_losses.append(tot_loss)
 
