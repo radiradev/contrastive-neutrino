@@ -302,6 +302,16 @@ class DogShitNet69(nn.Module):
             self.pool = ME.MinkowskiMaxPooling(kernel_size=3, stride=2, dimension=3)
             self.embedding_channel = 8
 
+        elif mode == 6:
+            self.conv_initial = ME.MinkowskiLinear(1, 1)
+            self.conv2 = nn.Identity()
+            self.conv1 = nn.Identity()
+            self.conv3 = nn.Identity()
+            self.conv4 = nn.Identity()
+            self.conv5 = nn.Identity()
+            self.pool = ME.MinkowskiMaxPooling(kernel_size=3, stride=2, dimension=3)
+            self.embedding_channel = 1
+
         else:
             raise ValueError(f"mode={mode} not a valid dogshitnet mode :(")
 
