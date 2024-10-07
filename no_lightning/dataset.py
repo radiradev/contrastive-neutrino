@@ -87,8 +87,6 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
 
         # Working with segmentedcube data where we vary the crosstalk as a throw
         if self.xtalk is not None:
-            # reco_hits = sample["reco_hits"][:10, :]
-            # hit_mask = sample["Tag_Trk"][:10]
             reco_hits = sample["reco_hits"]
             hit_mask = sample["Tag_Trk"]
             true_vtx = sample["TrueIniPos"]
@@ -109,9 +107,6 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
                     torch.tensor(coords, dtype=torch.float), torch.tensor(feats, dtype=torch.float)
                 )
             coords, feats = self.safe_sparse_quantize(coords, feats)
-            # print(label)
-            # print(coords)
-            # print()
             return coords, feats, torch.tensor(label).long().unsqueeze(0)
 
         elif (
