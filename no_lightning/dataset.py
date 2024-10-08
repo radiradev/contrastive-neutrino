@@ -6,8 +6,9 @@ import numpy as np
 
 import torch
 import torchvision
-
 from MinkowskiEngine.utils import sparse_quantize
+
+from rotation_conversions import random_rotation
 
 class ThrowsDataset(torchvision.datasets.DatasetFolder):
     def __init__(
@@ -71,6 +72,16 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         random_indices = np.random.choice(xtalk_indices, new_nb_xtalk, replace=False)
         hit_mask[random_indices] = True
 
+    def randomise_segmentedcube(self, coords, vtx):
+        """
+        The segmented cube dataset initial vertex and direction is not properly randomised.
+        Randomised this as we load the data
+        """
+        coords -= vtx
+        coords = coords @ random_rotation(dtype=coords.dtype, device=coords.device) # new direction
+        coords += 2000 * torch.rand(3) - 1000 # new vtx in 1000^3 box
+        return coords.numpy()
+
     def safe_sparse_quantize(self, coords, feats):
         coords, feats = sparse_quantize(coords, feats, quantization_size=self.quantization_size)
         if len(feats.shape) == 1: # Still need feature dimension for single voxel image
@@ -89,12 +100,14 @@ class ThrowsDataset(torchvision.datasets.DatasetFolder):
         if self.xtalk is not None:
             reco_hits = sample["reco_hits"]
             hit_mask = sample["Tag_Trk"]
-            true_vtx = sample["TrueIniPos"]
+            vtx = sample["TrueIniPos"]
             if self.xtalk < 1.0:
                 self.filter_crosstalk(hit_mask)
                 reco_hits = reco_hits[hit_mask]
             coords, feats = reco_hits[:, :3], reco_hits[:, 3].reshape(-1, 1)
-            coords -= (true_vtx + np.random.uniform(-2000., 2000., 3)) # new random vertex in detector
+            coords = self.randomise_segmentedcube(
+                torch.tensor(coords, dtype=torch.float), torch.tensor(vtx, dtype=torch.float)
+            )
         else: # larnd-sim data
             coords, feats = sample["coordinates"], np.expand_dims(sample["adc"], axis=1)
 

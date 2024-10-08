@@ -5,7 +5,7 @@ data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmente
 data_prep_type: "classification"
 quantization_size: 10.0
 xtalk: 1.0
-max_num_workers: 8
+max_num_workers: 0
 num_classes: 4
 
 model: "classifier"
