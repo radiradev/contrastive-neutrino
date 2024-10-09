@@ -4,14 +4,24 @@ import torch
 import numpy as np
 from tqdm import tqdm
 
-TRAIN_ELECTRON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/electron"
-TRAIN_MUON_DIR =     "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/muon"
-TRAIN_PION_DIR =     "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/pion"
-TRAIN_PROTON_DIR  =  "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/proton"
-TEST_ELECTRON_DIR =  "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/electron"
-TEST_MUON_DIR =      "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/muon"
-TEST_PION_DIR =      "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/pion"
-TEST_PROTON_DIR =    "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/proton"
+TRAIN_ELECTRON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/train/electron"
+TRAIN_MUON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/train/muon"
+TRAIN_PION_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/train/pion"
+TRAIN_PROTON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/train/proton"
+TEST_ELECTRON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/test/electron"
+TEST_MUON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/test/muon"
+TEST_PION_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/test/pion"
+TEST_PROTON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full/test/proton"
+
+# TRAIN_ELECTRON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/electron"
+# TRAIN_MUON_DIR =     "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/muon"
+# TRAIN_PION_DIR =     "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/pion"
+# TRAIN_PROTON_DIR  =  "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/proton"
+# TEST_ELECTRON_DIR =  "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/electron"
+# TEST_MUON_DIR =      "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/muon"
+# TEST_PION_DIR =      "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/pion"
+# TEST_PROTON_DIR =    "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing/proton"
+
 # TRAIN_ELECTRON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/electron"
 # TRAIN_MUON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/muon"
 # TRAIN_PION_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/train/pion"
@@ -20,6 +30,7 @@ TEST_PROTON_DIR =    "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcu
 # TEST_MUON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/test/muon"
 # TEST_PION_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/test/pion"
 # TEST_PROTON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised/test/proton"
+
 # TRAIN_ELECTRON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_full/train/electron"
 # TRAIN_MUON_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_full/train/muon"
 # TRAIN_PION_DIR = "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_full/train/pion"
