@@ -8,16 +8,25 @@ import os, shutil, random
 import numpy as np
 from tqdm import tqdm
 
-# The train and test have the same set of fixed initial points so can use data from either
 SEGCUBE_FULL_DATASET = (
-    "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_full/test"
+    "/share/gpu2/awilkins/contrastive-neutrino_data/segmentedcube_zenodo/training_and_testing"
 )
 SEGCUBE_OUT_DATASET = (
-    "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised"
+    "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full"
 )
-OUT_DATASET_TRAIN_SIZE = 30000
-OUT_DATASET_VAL_SIZE = 6000
-OUT_DATASET_TEST_SIZE = 100000
+OUT_DATASET_TRAIN_SIZE = 320000
+OUT_DATASET_VAL_SIZE =   80000
+OUT_DATASET_TEST_SIZE =  400000
+# The train and test have the same set of fixed initial points so can use data from either
+# SEGCUBE_FULL_DATASET = (
+#     "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_full/test"
+# )
+# SEGCUBE_OUT_DATASET = (
+#     "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised"
+# )
+# OUT_DATASET_TRAIN_SIZE = 30000
+# OUT_DATASET_VAL_SIZE = 6000
+# OUT_DATASET_TEST_SIZE = 100000
 
 electron_x = np.load("test_electron_x.npy")
 muon_x = np.load("test_muon_x.npy")
