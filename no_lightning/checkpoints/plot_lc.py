@@ -17,7 +17,7 @@ def main(args):
         iters_per_epoch = args.iters_per_epoch
 
     curr_epoch = 0
-    for i_line, line in enumerate(losses):
+    for i_line, line in enumerate(losses[:-2]):
 
         if line.startswith("Epoch: "):
             epoch = int(line.split("Epoch: ")[1].split(",")[0])
@@ -61,4 +61,3 @@ def parse_arguments():
 
 if __name__ == '__main__':
     main(parse_arguments())
-
