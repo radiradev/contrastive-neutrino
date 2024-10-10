@@ -1,0 +1,22 @@
+name: "classifier_segmentedcube_nominal_xtalk50_convnextsmall_truerandomdatafull"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full"
+data_prep_type: "classification_augmentations"
+quantization_size: 10.0
+xtalk: 0.5
+max_num_workers: 8
+num_classes: 4
+
+augs: ["identity", "rotate", "drop", "shift_energy_byvoxel", "translate_byvoxel"]
+n_augs: 3
+aug_energy_scale_factor: 0.25
+aug_translate_scale_factor: 1.0
+
+model: "classifier"
+net_architecture: "convnext"
+net_depths: [2, 2, 6, 2]
+save_model: "all"
+
+batch_size: 512
+epochs: 200
