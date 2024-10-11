@@ -1,4 +1,4 @@
-name: "classifier_segmentedcube_nominal_xtalk100_modelnet_truerandomdata_final"
+name: "classifier_segmentedcube_nominal_xtalk100_modelnet_truerandomdatafull_final"
 checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/classifier"
 
 data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full"
