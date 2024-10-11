@@ -87,14 +87,12 @@ def main(args):
     elif args.classifier:
         print("Getting classifier predictions...")
         y_pred_classifier, y_target_classifier = [], []
-        for i, data in enumerate(tqdm(dataloader)):
+        for data in tqdm(dataloader):
             model.set_input(data)
             model.test(compute_loss=False)
             vis = model.get_current_visuals()
             y_pred_classifier.append(vis["pred_out"])
             y_target_classifier.append(vis["target_out"])
-            if i > 10:
-                break
         y_pred = torch.cat(y_pred_classifier).detach().cpu().numpy()
         y_target = torch.cat(y_target_classifier).detach().cpu().numpy()
     elif args.dann:
