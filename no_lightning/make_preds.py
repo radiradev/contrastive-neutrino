@@ -1,4 +1,4 @@
-import argparse, os, pickle
+import argparse, os, pickle, functools
 
 import numpy as np
 from tqdm import tqdm
@@ -134,6 +134,7 @@ def parse_arguments():
 
     parser.add_argument("--finetune_pickle", type=str, default=None)
     parser.add_argument("--xtalk", type=float, default=None)
+    parser.add_argument("--batch_mode", action="store_true")
 
     args = parser.parse_args()
 
@@ -146,4 +147,8 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args = parse_arguments()
+
+    if args.batch_mode:
+        tqdm.__init__ = functools.partialmethod(tqdm.__init__, disable=True)
+
     main(args)
