@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 import MinkowskiEngine as ME
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
 from config_parser import get_config
 from simclr import SimCLR
@@ -86,12 +87,14 @@ def main(args):
     elif args.classifier:
         print("Getting classifier predictions...")
         y_pred_classifier, y_target_classifier = [], []
-        for data in tqdm(dataloader):
+        for i, data in enumerate(tqdm(dataloader)):
             model.set_input(data)
             model.test(compute_loss=False)
             vis = model.get_current_visuals()
             y_pred_classifier.append(vis["pred_out"])
             y_target_classifier.append(vis["target_out"])
+            if i > 10:
+                break
         y_pred = torch.cat(y_pred_classifier).detach().cpu().numpy()
         y_target = torch.cat(y_target_classifier).detach().cpu().numpy()
     elif args.dann:
@@ -106,18 +109,36 @@ def main(args):
         y_pred = torch.cat(y_pred_classifier).detach().cpu().numpy()
         y_target = torch.cat(y_target_classifier).detach().cpu().numpy()
 
-    samples, indices = dataloader.dataset.samples, list(dataloader.dataset.index_history)
-    preds = {}
-    for i, (probs, label) in enumerate(zip(y_pred, y_target)):
-        fname = samples[indices[i]][0]
-        preds[fname] = [probs.tolist(), int(label)]
+    if args.small_output:
+        pred_labels, target_labels = [], []
+        for probs, label in zip(y_pred, y_target):
+            pred_labels.append(int(np.argmax(probs.tolist())))
+            target_labels.append(int(label))
+        accs = { "acc" : float(accuracy_score(pred_labels, target_labels)) }
+        preds = np.column_stack([pred_labels, target_labels])
 
-    test_dir = os.path.join(conf.checkpoint_dir, "test_results")
-    if not os.path.exists(test_dir):
-        os.makedirs(test_dir)
-    test_out_path = os.path.join(test_dir, args.preds_fname)
-    with open(test_out_path, "w") as f:
-        yaml.dump(preds, f)
+        test_dir = os.path.join(conf.checkpoint_dir, "test_results")
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
+        acc_out_path = os.path.join(test_dir, args.preds_fname + "_acc.yml")
+        with open(acc_out_path, "w") as f:
+            yaml.dump(accs, f)
+        preds_out_path = os.path.join(test_dir, args.preds_fname + ".npy")
+        np.save(preds_out_path, preds)
+
+    else:
+        samples, indices = dataloader.dataset.samples, list(dataloader.dataset.index_history)
+        preds = {}
+        for i, (probs, label) in enumerate(zip(y_pred, y_target)):
+            fname = samples[indices[i]][0]
+            preds[fname] = [probs.tolist(), int(label)]
+
+        test_dir = os.path.join(conf.checkpoint_dir, "test_results")
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
+        test_out_path = os.path.join(test_dir, args.preds_fname)
+        with open(test_out_path, "w") as f:
+            yaml.dump(preds, f)
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -135,6 +156,7 @@ def parse_arguments():
     parser.add_argument("--finetune_pickle", type=str, default=None)
     parser.add_argument("--xtalk", type=float, default=None)
     parser.add_argument("--batch_mode", action="store_true")
+    parser.add_argument("--small_output", action="store_true")
 
     args = parser.parse_args()
 

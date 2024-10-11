@@ -1,54 +1,43 @@
 #!/bin/bash
 #SBATCH -p GPU
-#SBATCH -N1
-#SBATCH -c8
+#SBATCH -N 1
+#SBATCH -c 8
+#SBATCH -t 180
 #SBATCH --gres=gpu:1
 #SBATCH --exclude=compute-gpu-0-[0,1,3]
-#SBATCH --error=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/err/job.%x.%j.err
-#SBATCH --output=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/out/job.%x.%j.out
+#SBATCH --array=1-21
+#SBATCH --error=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/err/job.%x.%j.%A_%a.err
+#SBATCH --output=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/out/job.%x.%j.%A_%a.out
 
 CONFIG_PATH=$1
 CHKPT_PATH=$2
 TEST_DIR_PATH=$3
 
-echo $0
-echo "node: ${SLURMD_NODENAME}"
-echo "gpu id: ${CUDA_VISIBLE_DEVICES}"
-echo "config_path: ${CONFIG_path}"
-echo "chkpt_path: ${CHKPT_PATH}"
-echo "test_dir_path: ${TEST_DIR_PATH}"
+echo "Job id ${SLURM_JOB_ID}"
+echo "Job array task id ${SLURM_ARRAY_TASK_ID}"
+echo "Node ${SLURMD_NODENAME}"
+echo "GPU id ${CUDA_VISIBLE_DEVICES}"
+echo "Config path ${CONFIG_PATH}"
+echo "Chkpt path ${CHKPT_PATH}"
+echo "Test dir path ${TEST_DIR_PATH}"
+
+xtalks=("0" "0.05" "0.1" "0.15" "0.2" "0.25" "0.3" "0.35" "0.4" "0.45" "0.5" "0.55" "0.6" "0.65" "0.7" "0.75" "0.8" "0.85" "0.9" "0.95" "1.0")
+xtalk_suffixes=(0 05 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100)
+xtalk=${xtalks[${SLURM_ARRAY_TASK_ID}]}
+xtalk_suffix=${xtalk_suffixes[${SLURM_ARRAY_TASK_ID}]}
+preds_name=preds_xtalk${xtalk_suffix}
+
+echo "Xtalk $xtalk"
+echo "Preds out name $preds_name"
 
 cd /home/awilkins/contrastive-neutrino/no_lightning
-
-for xtalk_num in {0,05,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95}
-do
-  echo $xtalk_num
-
-  xtalk=0.${xtalk_num}
-  preds_name=preds_xtalk${xtalk_num}.yml
-
-  apptainer exec --nv \
-                 --bind /share/ \
-                 /share/rcifdata/awilkins/images/rradev_minkowski_sandbox/ \
-                 python make_preds.py --batch_mode \
-                                      --classifier \
-                                      --xtalk $xtalk \
-                                      $CONFIG_PATH \
-                                      $CHKPT_PATH \
-                                      $TEST_DIR_PATH \
-                                      $preds_name
-done
-
-echo 100
-
-xtalk=1.0
-preds_name=preds_xtalk100.yml
 
 apptainer exec --nv \
                --bind /share/ \
                /share/rcifdata/awilkins/images/rradev_minkowski_sandbox/ \
                python make_preds.py --batch_mode \
                                     --classifier \
+                                    --small_output \
                                     --xtalk $xtalk \
                                     $CONFIG_PATH \
                                     $CHKPT_PATH \
