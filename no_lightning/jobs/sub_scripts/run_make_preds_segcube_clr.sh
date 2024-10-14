@@ -2,9 +2,9 @@
 #SBATCH -p GPU
 #SBATCH -N 1
 #SBATCH -c 8
-#SBATCH -t 180
+#SBATCH -t 600
 #SBATCH --gres=gpu:1
-#SBATCH --array=1-21
+#SBATCH --array=0-20
 #SBATCH --exclude=compute-gpu-0-[0,1,3]
 #SBATCH --error=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/err/job.%x.%j.err
 #SBATCH --output=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/out/job.%x.%j.out
