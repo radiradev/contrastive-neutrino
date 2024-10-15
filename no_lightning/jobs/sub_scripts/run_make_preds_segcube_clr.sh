@@ -6,8 +6,8 @@
 #SBATCH --gres=gpu:1
 #SBATCH --array=0-20
 #SBATCH --exclude=compute-gpu-0-[0,1,3]
-#SBATCH --error=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/err/job.%x.%j.err
-#SBATCH --output=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/out/job.%x.%j.out
+#SBATCH --error=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/err/job.%x.%j.%A_%a.err
+#SBATCH --output=/home/awilkins/contrastive-neutrino/no_lightning/jobs/logs/out/job.%x.%j.%A_%a.out
 
 CONFIG_PATH=$1
 CHKPT_PATH=$2
