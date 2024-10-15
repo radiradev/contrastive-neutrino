@@ -110,13 +110,13 @@ def main():
         accs_clr_xt25.append(get_acc(CHECKPOINT_DIR, CLR_XTALK25, dataset))
         accs_clr_xt50.append(get_acc(CHECKPOINT_DIR, CLR_XTALK50, dataset))
         accs_clr_xt75.append(get_acc(CHECKPOINT_DIR, CLR_XTALK75, dataset))
-        # accs_clr_xt100.append(get_acc(CHECKPOINT_DIR, CLR_XTALK100, dataset))
+        accs_clr_xt100.append(get_acc(CHECKPOINT_DIR, CLR_XTALK100, dataset))
 
         accs_clr_mnet_xt0.append(get_acc(CHECKPOINT_DIR, CLR_MNET_XTALK0, dataset))
         accs_clr_mnet_xt25.append(get_acc(CHECKPOINT_DIR, CLR_MNET_XTALK25, dataset))
         accs_clr_mnet_xt50.append(get_acc(CHECKPOINT_DIR, CLR_MNET_XTALK50, dataset))
         accs_clr_mnet_xt75.append(get_acc(CHECKPOINT_DIR, CLR_MNET_XTALK75, dataset))
-        # accs_clr_mnet_xt100.append(get_acc(CHECKPOINT_DIR, CLR_MNET_XTALK100, dataset))
+        accs_clr_mnet_xt100.append(get_acc(CHECKPOINT_DIR, CLR_MNET_XTALK100, dataset))
 
     # -- xtalk 0
     make_plot(
@@ -342,6 +342,61 @@ def main():
         ylim=(0.3, 0.8)
     )
 
+    # -- xtalk 100
+    make_plot(
+        [
+            accs_clr_xt100,
+            accs_clf_xt100,
+            accs_clf_noaugs_xt100,
+            accs_clr_mnet_xt100,
+            accs_clf_mnet_xt100,
+            accs_clf_mnet_noaugs_xt100
+        ],
+        [
+            "Contrastive ConvNeXt",
+            "Classifier ConvNeXt w/ augs",
+            "Classifier ConvNeXt",
+            "Contrastive ModelNet",
+            "Classifier ModelNet w/ augs",
+            "Classifier ModelNet"
+        ],
+        100,
+        savename="segcube_line_chart_xt100_everything.pdf",
+        ylim=(0.3, 0.8),
+        colors=["C0", "C1", "C2", "C0", "C1", "C2"],
+        linestyles=["solid", "solid", "solid", "dashed", "dashed", "dashed"],
+        markers=["o", "o", "o", "s", "s", "s"]
+    )
+    make_plot(
+        [
+            accs_clr_xt100,
+            accs_clf_xt100,
+            accs_clf_noaugs_xt100,
+        ],
+        [
+            "Contrastive",
+            "Classifier w/ augs",
+            "Classifier"
+        ],
+        100,
+        savename="segcube_line_chart_xt100_convnext.pdf",
+        ylim=(0.3, 0.8)
+    )
+    make_plot(
+        [
+            accs_clr_mnet_xt100,
+            accs_clf_mnet_xt100,
+            accs_clf_mnet_noaugs_xt100
+        ],
+        [
+            "Contrastive",
+            "Classifier w/ augs",
+            "Classifier"
+        ],
+        100,
+        savename="segcube_line_chart_xt100_modelnet.pdf",
+        ylim=(0.3, 0.8)
+    )
 
 def get_acc(chktpt_dir, exp_rel_path, dataset):
     acc_path = os.path.join(chktpt_dir, exp_rel_path, "test_results", f"preds_{dataset}_acc.yml")
