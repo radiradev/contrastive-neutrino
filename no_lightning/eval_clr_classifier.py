@@ -68,7 +68,9 @@ def main(args):
         print("Getting simCLR representations of data...")
         feats, labels = [], []
         with torch.inference_mode():
-            for batch_coords, batch_feats, batch_labels in tqdm(dataloader):
+            for i_batch, (batch_coords, batch_feats, batch_labels) in tqdm(
+                enumerate(dataloader)
+            ):
                 batch_coords = batch_coords.to(device)
                 batch_feats = batch_feats.to(device)
                 stensor = model_clr._create_tensor(batch_feats, batch_coords)
@@ -76,6 +78,8 @@ def main(args):
                 feats.append(out.detach().cpu())
                 batch_labels = torch.tensor(batch_labels).long()
                 labels.append(batch_labels)
+                if i_batch >= args.max_test_batches:
+                    break
         feats = torch.cat(feats, dim=0)
         labels = torch.cat(labels, dim=0)
         finetune_test_data = torch.utils.data.TensorDataset(feats, labels)
@@ -94,7 +98,7 @@ def main(args):
             else ("pred_out", "target_out")
         )
         y_pred_classifier, y_target_classifier = [], []
-        for data in tqdm(dataloader):
+        for i_batch, data in tqdm(enumerate(dataloader)):
             if args.classifier_is_dann:
                 model_classifier.set_input_test(data)
             else:
@@ -103,6 +107,8 @@ def main(args):
             vis = model_classifier.get_current_visuals()
             y_pred_classifier.append(vis[pred_key].argmax(axis=1))
             y_target_classifier.append(vis[target_key])
+            if i_batch >= args.max_test_batches:
+                break
         y_pred_classifier = torch.cat(y_pred_classifier).detach().cpu().numpy()
         y_target_classifier = torch.cat(y_target_classifier).detach().cpu().numpy()
         acc_score_classifier = accuracy_score(y_pred_classifier, y_target_classifier)
@@ -126,6 +132,7 @@ def parse_arguments():
     parser.add_argument("--xtalk", type=float, default=None)
     parser.add_argument("--skip_clr", action="store_true")
     parser.add_argument("--skip_clf", action="store_true")
+    parser.add_argument("--max_test_batches", default=None, type=int)
 
     args = parser.parse_args()
 
