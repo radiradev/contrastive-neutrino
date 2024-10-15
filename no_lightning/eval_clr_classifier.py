@@ -78,7 +78,7 @@ def main(args):
                 feats.append(out.detach().cpu())
                 batch_labels = torch.tensor(batch_labels).long()
                 labels.append(batch_labels)
-                if i_batch >= args.max_test_batches:
+                if args.max_test_batches is not None and i_batch >= args.max_test_batches:
                     break
         feats = torch.cat(feats, dim=0)
         labels = torch.cat(labels, dim=0)
@@ -107,7 +107,7 @@ def main(args):
             vis = model_classifier.get_current_visuals()
             y_pred_classifier.append(vis[pred_key].argmax(axis=1))
             y_target_classifier.append(vis[target_key])
-            if i_batch >= args.max_test_batches:
+            if args.max_test_batches is not None and i_batch >= args.max_test_batches:
                 break
         y_pred_classifier = torch.cat(y_pred_classifier).detach().cpu().numpy()
         y_target_classifier = torch.cat(y_target_classifier).detach().cpu().numpy()
