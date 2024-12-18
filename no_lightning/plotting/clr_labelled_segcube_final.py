@@ -150,13 +150,13 @@ def main():
             accs_clf_noaugs_xt0,
         ],
         [
-            "Contrastive",
+            "Supervised Contrastive",
             "Classifier w/ augs",
             "Classifier"
         ],
         0,
         savename="segcube_line_chart_xt0_convnext.pdf",
-        ylim=(0.2, 0.8)
+        ylim=(0.4, 0.7)
     )
     make_plot(
         [
@@ -206,13 +206,13 @@ def main():
             accs_clf_noaugs_xt25,
         ],
         [
-            "Contrastive",
+            "Supervised Contrastive",
             "Classifier w/ augs",
             "Classifier"
         ],
         25,
         savename="segcube_line_chart_xt25_convnext.pdf",
-        ylim=(0.4, 0.8)
+        ylim=(0.4, 0.7)
     )
     make_plot(
         [
@@ -262,13 +262,13 @@ def main():
             accs_clf_noaugs_xt50,
         ],
         [
-            "Contrastive",
+            "Supervised Contrastive",
             "Classifier w/ augs",
             "Classifier"
         ],
         50,
         savename="segcube_line_chart_xt50_convnext.pdf",
-        ylim=(0.4, 0.8)
+        ylim=(0.4, 0.7)
     )
     make_plot(
         [
@@ -318,13 +318,13 @@ def main():
             accs_clf_noaugs_xt75,
         ],
         [
-            "Contrastive",
+            "Supervised Contrastive",
             "Classifier w/ augs",
             "Classifier"
         ],
         75,
         savename="segcube_line_chart_xt75_convnext.pdf",
-        ylim=(0.3, 0.8)
+        ylim=(0.4, 0.7)
     )
     make_plot(
         [
@@ -374,13 +374,13 @@ def main():
             accs_clf_noaugs_xt100,
         ],
         [
-            "Contrastive",
+            "Supervised Contrastive",
             "Classifier w/ augs",
             "Classifier"
         ],
         100,
         savename="segcube_line_chart_xt100_convnext.pdf",
-        ylim=(0.3, 0.8)
+        ylim=(0.4, 0.7)
     )
     make_plot(
         [
@@ -416,27 +416,27 @@ def make_plot(
 
     if xtalk == 0:
         ax[1].axvline(0.0, c="r", label="_")
-        ax[1].text(0.025, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
+        ax[1].text(0.025, 0.55, "Nominal", rotation=90, c="r", fontsize=13)
         ax[0].axvline(0.0, c="r", label="_")
         residuals = [ [ (acc - data[0]) / data[0] for acc in data ] for data in datas ]
     elif xtalk == 25:
         ax[1].axvline(0.25, c="r", label="_")
-        ax[1].text(0.275, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
+        ax[1].text(0.275, 0.55, "Nominal", rotation=90, c="r", fontsize=13)
         ax[0].axvline(0.25, c="r", label="_")
         residuals = [ [ (acc - data[5]) / data[5] for acc in data ] for data in datas ]
     elif xtalk == 50:
         ax[1].axvline(0.5, c="r", label="_")
-        ax[1].text(0.525, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
+        ax[1].text(0.525, 0.55, "Nominal", rotation=90, c="r", fontsize=13)
         ax[0].axvline(0.5, c="r", label="_")
         residuals = [ [ (acc - data[10]) / data[10] for acc in data ] for data in datas ]
     elif xtalk == 75:
         ax[1].axvline(0.75, c="r", label="_")
-        ax[1].text(0.775, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
+        ax[1].text(0.775, 0.55, "Nominal", rotation=90, c="r", fontsize=13)
         ax[0].axvline(0.75, c="r", label="_")
         residuals = [ [ (acc - data[15]) / data[15] for acc in data ] for data in datas ]
     elif xtalk == 100:
         ax[1].axvline(1.0, c="r", label="_")
-        ax[1].text(0.975, 0.7, "Nominal", rotation=90, c="r", fontsize=13)
+        ax[1].text(0.975, 0.55, "Nominal", rotation=90, c="r", fontsize=13)
         ax[0].axvline(1.0, c="r", label="_")
         residuals = [ [ (acc - data[20]) / data[20] for acc in data ] for data in datas ]
     else:

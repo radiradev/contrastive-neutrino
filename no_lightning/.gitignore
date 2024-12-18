@@ -12,3 +12,4 @@ plotting/augmentations/*.pdf
 plotting/throws/*.pdf
 plotting/confusion_matrices/*.pdf
 plotting/line_charts/*.pdf
+plotting/paper/*.pdf
