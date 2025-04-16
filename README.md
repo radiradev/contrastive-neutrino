@@ -2,6 +2,8 @@
 # Contrastive Learning for LArTPC
 We explore a constrastive learning framework based on [SimCLR](https://arxiv.org/abs/2002.05709), as a method of pretraining and decorrelating from systematic uncertainties and effects related to symmetries within neutrino events. 
 
+**This repository contains the code used in the paper [arXiv:2502.07724](https://arxiv.org/abs/2502.07724). The code used to produce the paper results is in the `no_lightning/` directory, the top-level code here is from earlier studies on using detector systematic throws as augmentations for the contrastive learning.**
+
 This is a two step approach:
 - Pretraining phase - we create two augmented versions of events within the batch, then using all $2N$ events, we create a matrix of $(2N)^2$ pairs. Pairs originated from the same event are known as *positive pairs*, while the rest are *negative*. The model tries to get the positive pairs close together, and the negative pairs far apart in the embedding space. 
 
