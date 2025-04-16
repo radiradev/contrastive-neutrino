@@ -54,7 +54,7 @@ options:
 
 Experiments are configured via yaml files in `experiments/`, see `config_parser.py` for valid and required fields. Saved models + losses appear in a study in `checkpoints/` in a directory named after the experiment.
 
-Datasets are expected in the format:
+Datasets are expected in the directory format:
 ```
 train/
   electron/
@@ -67,8 +67,8 @@ val/
 test/
   ^^
 ```
-See `dataset.py` for the expected format.
+See `dataset.py` for the expected file format.
 
-The script `../larnd/convert_data.py` was used to convert larnd-sim files into the desired format.
+The script `../larnd/convert_data.py` was used to convert larnd-sim files into the desired file format for the LArTPC data.
 
-For the segmented scintillator cube dataset [link](https://zenodo.org/records/10998285), the original file format is used. There was an issue with many of the events in a particle class sharing the same true kinematics which was fixed by ensuring only events within each of train/val/test have a unique set of true kinematic variables. This was done by running `misc/summarise_dataset.py` and then `misc/make_truly_random_segcube_dataset.py` which the hardcoded variables at the top of each script pointing to the relevant dataset locations.
+For the segmented scintillator cube dataset ([link](https://zenodo.org/records/10998285)), the original file format is used. There was an issue with many of the events in a particle class sharing the same true kinematics. This was fixed by ensuring events within each of train/val/test have a unique set of true kinematic variables. This was done by running `misc/summarise_dataset.py` and then `misc/make_truly_random_segcube_dataset.py` with the hardcoded variables at the top of each script pointing to the relevant dataset locations.
