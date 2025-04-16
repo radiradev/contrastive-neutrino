@@ -9,9 +9,9 @@ from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
 import os
 
-INPUT_DIR="/share/lustre/awilkins/contrastive_learning/extra_100kpp_for_new_electhrows/larndsim_throw6_30kpp"
-OUTPUT_DIR="/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw6/all"
-INPUT_NAME_SUFFIX="electronics_throw6"
+INPUT_DIR="/share/lustre/awilkins/contrastive_learning/extra_100kpp_for_new_electhrows/larndsim_throw7_30kpp"
+OUTPUT_DIR="/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw7/all"
+INPUT_NAME_SUFFIX="electronics_throw7"
 
 # module0, 2x2, 2x2_MR4, ndlar
 detector = "ndlar"
