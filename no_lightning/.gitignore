@@ -6,6 +6,7 @@ jobs/logs
 
 plotting/.venv_*
 plotting/*.pdf
+plotting/*.npy
 plotting/umaps/*.pdf
 plotting/bar_charts/*.pdf
 plotting/augmentations/*.pdf

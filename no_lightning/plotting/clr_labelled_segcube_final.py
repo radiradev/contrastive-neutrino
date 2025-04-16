@@ -38,11 +38,11 @@ CLF_MNET_NOAUGS_XTALK75 =  "classifier/classifier_segmentedcube_nominal_xtalk75_
 CLF_MNET_NOAUGS_XTALK100 = "classifier/classifier_segmentedcube_nominal_xtalk100_modelnet_truerandomdatafull_noaugs_final"
 
 # -- CLR paths
-CLR_XTALK0 =   "clr/clr_segmentedcube_nominal_xtalk0_labels_truerandomdatafull_final"
-CLR_XTALK25 =  "clr/clr_segmentedcube_nominal_xtalk25_labels_truerandomdatafull_final"
-CLR_XTALK50 =  "clr/clr_segmentedcube_nominal_xtalk50_labels_truerandomdatafull_final"
-CLR_XTALK75 =  "clr/clr_segmentedcube_nominal_xtalk75_labels_truerandomdatafull_final"
-CLR_XTALK100 = "clr/clr_segmentedcube_nominal_xtalk100_labels_truerandomdatafull_final"
+CLR_XTALK0 =   "clr/clr_segmentedcube_nominal_xtalk0_labels_truerandomdatafull_final_fixedfinetune"
+CLR_XTALK25 =  "clr/clr_segmentedcube_nominal_xtalk25_labels_truerandomdatafull_final_fixedfinetune"
+CLR_XTALK50 =  "clr/clr_segmentedcube_nominal_xtalk50_labels_truerandomdatafull_final_fixedfinetune"
+CLR_XTALK75 =  "clr/clr_segmentedcube_nominal_xtalk75_labels_truerandomdatafull_final_fixedfinetune"
+CLR_XTALK100 = "clr/clr_segmentedcube_nominal_xtalk100_labels_truerandomdatafull_final_fixedfinetune"
 
 CLR_MNET_XTALK0 =   "clr/clr_segmentedcube_nominal_xtalk0_labels_modelnet_truerandomdatafull_final"
 CLR_MNET_XTALK25 =  "clr/clr_segmentedcube_nominal_xtalk25_labels_modelnet_truerandomdatafull_final"
