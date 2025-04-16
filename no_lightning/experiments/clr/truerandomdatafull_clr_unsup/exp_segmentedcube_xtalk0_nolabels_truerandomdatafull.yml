@@ -1,0 +1,21 @@
+name: "clr_segmentedcube_xtalk0_nolabels_truerandomdatafull"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/clr"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube_truly_randomised_full"
+data_prep_type: "contrastive_augmentations"
+quantization_size: 10.0
+xtalk: 0.0
+max_num_workers: 8
+num_classes: 4
+
+augs: ["identity", "rotate", "drop", "shift_energy_byvoxel", "translate_byvoxel"]
+n_augs: 3
+aug_energy_scale_factor: 0.25
+aug_translate_scale_factor: 1.0
+
+model: "sim_clr"
+net_architecture: "convnext"
+save_model: "all"
+
+batch_size: 512
+epochs: 35
