@@ -12,6 +12,7 @@ lightning_logs/
 wandb/
 config/
 checkpoints/
+/ckpts/
 *.ipynb
 slurm*
 *.pkl

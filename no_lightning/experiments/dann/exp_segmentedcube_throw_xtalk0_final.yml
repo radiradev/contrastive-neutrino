@@ -1,0 +1,17 @@
+name: "dann_segmentedcube_throw_xtalk0_final"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/dann"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube" # unlabelled target data (thrown simulation)
+data_path_s: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/segmentedcube" # labelled source data (nominal simulation)
+data_prep_type: "classification"
+quantization_size: 1.0
+xtalk: 0.0 # unlabelled target
+xtalk_s: 0.5 # labelled source
+max_num_workers: 8
+num_classes: 4
+
+model: "dann"
+save_model: "best"
+
+batch_size: 512
+epochs: 100

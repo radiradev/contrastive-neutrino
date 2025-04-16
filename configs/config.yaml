@@ -34,6 +34,6 @@ electronics_throws:
   throw9: throw9
   throw10: throw10
 
-clr_features_path: /pscratch/sd/r/rradev/converted_data/clr_features
-wandb_tmp_dir: /pscratch/sd/r/rradev/wandb
-checkpoint_dirpath: /pscratch/sd/r/rradev/contrastive_neutrino_ckpt
+# clr_features_path: /pscratch/sd/r/rradev/converted_data/clr_features
+wandb_tmp_dir: /home/awilkins/contrastive-neutrino/wandb
+checkpoint_dirpath: /home/awilkins/contrastive-neutrino/ckpts

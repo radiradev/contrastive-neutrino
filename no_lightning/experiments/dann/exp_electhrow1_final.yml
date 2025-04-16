@@ -1,0 +1,13 @@
+name: "dann_electhrow1_final"
+checkpoints_dir: "/home/awilkins/contrastive-neutrino/no_lightning/checkpoints/dann"
+
+data_path: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/electronics_throw1"
+data_path_s: "/share/rcifdata/awilkins/contrastive-neutrino_data/datasets/nominal"
+data_prep_type: "classification"
+max_num_workers: 12
+
+model: "dann"
+save_model: "best"
+
+batch_size: 672
+epochs: 100

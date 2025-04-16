@@ -1,0 +1,16 @@
+*.pth
+!checkpoints/
+*.swp
+
+jobs/logs
+
+plotting/.venv_*
+plotting/*.pdf
+plotting/*.npy
+plotting/umaps/*.pdf
+plotting/bar_charts/*.pdf
+plotting/augmentations/*.pdf
+plotting/throws/*.pdf
+plotting/confusion_matrices/*.pdf
+plotting/line_charts/*.pdf
+plotting/paper/*.pdf
